@@ -1,0 +1,51 @@
+{
+  "name": "@gira-de/svelte-undo",
+  "version": "0.0.1",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/svelte-undo.umd.js",
+  "module": "./dist/svelte-undo.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/svelte-undo.es.js",
+      "require": "./dist/svelte-undo.umd.js"
+    }
+  },
+  "types": "./dist/types/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.26.0",
+    "@types/node": "^18.11.18",
+    "@typescript-eslint/eslint-plugin": "^5.50.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "@vitest/coverage-istanbul": "^0.28.4",
+    "@vitest/ui": "^0.28.4",
+    "eslint": "^8.33.0",
+    "prettier": "^2.8.3",
+    "prettier-plugin-svelte": "^2.9.0",
+    "svelte": "^3.55.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-dts": "^1.7.2",
+    "vitest": "^0.28.4"
+  },
+  "dependencies": {
+    "immer": "^9.0.19"
+  }
+}
