@@ -1,5 +1,5 @@
 import type { UndoAction } from './action/action';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
 import { InitAction } from './action/action-init';
 import { loadActions, saveActions, type SavedUndoAction } from './save-load';
@@ -51,8 +51,7 @@ interface UndoStackStore<TMsg>
 export function undoStackStore<TMsg>(
   firstActionMsg: TMsg,
 ): UndoStackStore<TMsg> {
-  const undoStack = newUndoStack(firstActionMsg);
-  const store = writable(undoStack);
+  const store = writable(newUndoStack(firstActionMsg));
 
   function push(action: UndoAction<TMsg>) {
     store.update((undoStack) => {
@@ -153,6 +152,8 @@ export function undoStackStore<TMsg>(
   }
 
   function save(stores: Record<string, unknown>): SavedUndoStack<TMsg> {
+    const undoStack = get(store);
+
     return {
       actions: saveActions(undoStack.actions, stores),
       index: undoStack.index,

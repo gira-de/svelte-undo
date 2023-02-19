@@ -210,7 +210,7 @@ describe('saveActions', () => {
     ]);
   });
 
-  test('should save set-action', () => {
+  test('should save mutate-action', () => {
     const store1 = writable({ value: 0 });
     const patch: MutateActionPatch = {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
@@ -225,6 +225,34 @@ describe('saveActions', () => {
         storeId: 'store1',
         msg: 'MutateAction',
         data: patch,
+      },
+    ]);
+  });
+
+  test('should save multiple actions', () => {
+    const store1 = writable(0);
+    const setAction = new SetAction('SetAction', store1, 1);
+
+    const store2 = writable('hello');
+    const setAction2 = new SetAction('SetAction', store2, 'world');
+
+    const savedActions = saveActions([setAction, setAction2], {
+      store1,
+      store2,
+    });
+
+    expect(savedActions).toEqual([
+      {
+        type: 'set',
+        storeId: 'store1',
+        msg: 'SetAction',
+        data: 1,
+      },
+      {
+        type: 'set',
+        storeId: 'store2',
+        msg: 'SetAction',
+        data: 'world',
       },
     ]);
   });
