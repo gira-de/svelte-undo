@@ -247,6 +247,25 @@ describe('subscribe', () => {
   });
 });
 
+describe('clear', () => {
+  test('should all actions from stack and create a new init action', () => {
+    const undoStack = undoStackStore('created');
+
+    const action = new SetAction('set value 1', writable(0), 1);
+    action.apply();
+    undoStack.push(action);
+
+    undoStack.clear();
+    expect(get(undoStack).index).toBe(0);
+    expect(get(undoStack).actions).toHaveLength(1);
+    expect(get(undoStack).actions[0].msg).toBe('created');
+    expect(get(undoStack).canUndo).toBe(false);
+    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack).counter).toBe(0);
+    expect(get(undoStack).seqNbr).toBe(0);
+  });
+});
+
 describe('load', () => {
   test('should load actions into stack', () => {
     const undoStack = undoStackStore('created');

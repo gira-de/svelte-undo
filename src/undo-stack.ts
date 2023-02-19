@@ -40,6 +40,7 @@ interface UndoStackStore<TMsg>
   undo: () => void;
   redo: () => void;
   goto: (index: number) => void;
+  clear: () => void;
   save: (stores: Record<string, unknown>) => SavedUndoStack<TMsg>;
   load: (
     savedUndoStack: SavedUndoStack<TMsg>,
@@ -127,6 +128,10 @@ export function undoStackStore<TMsg>(
     });
   }
 
+  function clear() {
+    store.set(newUndoStack(firstActionMsg));
+  }
+
   function load(
     savedUndoStack: SavedUndoStack<TMsg>,
     stores: Record<string, unknown>,
@@ -160,6 +165,7 @@ export function undoStackStore<TMsg>(
     undo,
     redo,
     goto,
+    clear,
     save,
     load,
   };
