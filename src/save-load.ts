@@ -26,7 +26,7 @@ export function getActionTypeId(action: UndoAction<unknown>) {
 
 export function loadActions<TMsg>(
   savedUndoActions: SavedUndoAction<TMsg>[],
-  stores: Map<string, unknown>,
+  stores: Record<string, unknown>,
 ) {
   const stackedActions: UndoAction<TMsg>[] = [];
 
@@ -51,13 +51,13 @@ export function loadActions<TMsg>(
     if (savedAction.type === 'set') {
       return new SetAction(
         savedAction.msg,
-        stores.get(savedAction.storeId) as Writable<unknown>,
+        stores[savedAction.storeId] as Writable<unknown>,
         savedAction.data,
       );
     } else if (savedAction.type === 'mutate') {
       return new MutateAction(
         savedAction.msg,
-        stores.get(savedAction.storeId) as Writable<Objectish>,
+        stores[savedAction.storeId] as Writable<Objectish>,
         savedAction.data as MutateActionPatch,
       );
     }
@@ -70,6 +70,18 @@ export function loadActions<TMsg>(
 
 export function saveActions<TMsg>(
   actions: UndoAction<TMsg>[],
+  stores: Record<string, unknown>,
+) {
+  const storeIds = new Map<unknown, string>();
+  for (const [key, value] of Object.entries(stores)) {
+    storeIds.set(value, key);
+  }
+
+  return _saveActions(actions, storeIds);
+}
+
+function _saveActions<TMsg>(
+  actions: UndoAction<TMsg>[],
   storeIds: Map<unknown, string>,
 ) {
   const savedActions: SavedUndoAction<TMsg>[] = [];
@@ -77,7 +89,7 @@ export function saveActions<TMsg>(
   for (const action of actions) {
     let data: unknown = undefined;
     if (Array.isArray(action.patch)) {
-      data = saveActions(action.patch as UndoAction<TMsg>[], storeIds);
+      data = _saveActions(action.patch as UndoAction<TMsg>[], storeIds);
     } else {
       data = action.patch;
     }

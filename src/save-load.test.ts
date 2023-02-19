@@ -1,4 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { UndoAction } from './action/action';
 import { GroupAction } from './action/action-group';
 import { InitAction } from './action/action-init';
@@ -46,7 +46,7 @@ describe('loadActions', () => {
       msg: 'InitAction',
     };
 
-    const undoActions = loadActions([savedInitAction], new Map());
+    const undoActions = loadActions([savedInitAction], {});
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(InitAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -70,11 +70,9 @@ describe('loadActions', () => {
       ],
     };
 
-    const stores = new Map<string, Writable<unknown>>();
     const store1 = writable(0);
-    stores.set('store1', store1);
 
-    const undoActions = loadActions([savedGroupAction], stores);
+    const undoActions = loadActions([savedGroupAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(GroupAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -94,11 +92,9 @@ describe('loadActions', () => {
       msg: 'SetAction',
       data: 1,
     };
-    const stores = new Map<string, Writable<unknown>>();
     const store1 = writable(0);
-    stores.set('store1', store1);
 
-    const undoActions = loadActions([savedSetAction], stores);
+    const undoActions = loadActions([savedSetAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(SetAction);
     expect(undoActions[0].store).toBe(store1);
@@ -121,11 +117,9 @@ describe('loadActions', () => {
         inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
       },
     };
-    const stores = new Map<string, Writable<unknown>>();
     const store1 = writable({ value: 0 });
-    stores.set('store1', store1);
 
-    const undoActions = loadActions([savedMutateAction], stores);
+    const undoActions = loadActions([savedMutateAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(MutateAction);
     expect(undoActions[0].store).toBe(store1);
@@ -144,10 +138,9 @@ describe('loadActions', () => {
       msg: 'SetAction',
       data: 1,
     };
-    const stores = new Map<string, Writable<unknown>>();
-    stores.set('store1', writable(0));
+    const store1 = writable(0);
 
-    expect(() => loadActions([savedSetAction], stores)).toThrow();
+    expect(() => loadActions([savedSetAction], { store1 })).toThrow();
   });
 
   test('should throw if mutate-actin does not contain a store id', () => {
@@ -159,10 +152,9 @@ describe('loadActions', () => {
         inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
       },
     };
-    const stores = new Map<string, Writable<unknown>>();
-    stores.set('store1', writable({ value: 0 }));
+    const store1 = writable({ value: 0 });
 
-    expect(() => loadActions([savedMutateAction], stores)).toThrow();
+    expect(() => loadActions([savedMutateAction], { store1 })).toThrow();
   });
 
   test('should throw if action type id is unkown', () => {
@@ -171,10 +163,9 @@ describe('loadActions', () => {
       storeId: 'store1',
       msg: 'FooAction',
     };
-    const stores = new Map<string, Writable<unknown>>();
-    stores.set('store1', writable(0));
+    const store1 = writable(0);
 
-    expect(() => loadActions([savedFooAction], stores)).toThrow();
+    expect(() => loadActions([savedFooAction], { store1 })).toThrow();
   });
 });
 
@@ -182,7 +173,7 @@ describe('saveActions', () => {
   test('should save init-action', () => {
     const initAction = new InitAction('InitAction');
 
-    const savedActions = saveActions([initAction], new Map());
+    const savedActions = saveActions([initAction], {});
 
     expect(savedActions).toEqual([{ type: 'init', msg: 'InitAction' }]);
   });
@@ -192,9 +183,7 @@ describe('saveActions', () => {
     const store1 = writable(0);
     groupAction.push(new SetAction('SetAction', store1, 1));
 
-    const storeIds = new Map<unknown, string>();
-    storeIds.set(store1, 'store1');
-    const savedActions = saveActions([groupAction], storeIds);
+    const savedActions = saveActions([groupAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -206,12 +195,10 @@ describe('saveActions', () => {
   });
 
   test('should save set-action', () => {
-    const storeIds = new Map<unknown, string>();
     const store1 = writable(0);
-    storeIds.set(store1, 'store1');
 
     const setAction = new SetAction('SetAction', store1, 1);
-    const savedActions = saveActions([setAction], storeIds);
+    const savedActions = saveActions([setAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -224,15 +211,13 @@ describe('saveActions', () => {
   });
 
   test('should save set-action', () => {
-    const storeIds = new Map<unknown, string>();
     const store1 = writable({ value: 0 });
-    storeIds.set(store1, 'store1');
     const patch: MutateActionPatch = {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
       inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
     };
     const mutateAction = new MutateAction('MutateAction', store1, patch);
-    const savedActions = saveActions([mutateAction], storeIds);
+    const savedActions = saveActions([mutateAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -245,10 +230,9 @@ describe('saveActions', () => {
   });
 
   test('should throw if store id is missing', () => {
-    const storeIds = new Map<unknown, string>();
     const store1 = writable(0);
     const setAction = new SetAction('SetAction', store1, 1);
 
-    expect(() => saveActions([setAction], storeIds)).toThrow();
+    expect(() => saveActions([setAction], {})).toThrow();
   });
 });

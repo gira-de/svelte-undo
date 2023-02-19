@@ -1,5 +1,5 @@
 import { SavedUndoStack, undoStackStore } from './undo-stack';
-import { get, Writable, writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
 
 describe('push', () => {
@@ -258,10 +258,8 @@ describe('load', () => {
         { type: 'set', storeId: 'foo', msg: 'set value 1', data: 0 },
       ],
     };
-    const stores = new Map<string, Writable<unknown>>();
     const fooStore = writable(1);
-    stores.set('foo', fooStore);
-    undoStack.load(savedUndoStack, stores);
+    undoStack.load(savedUndoStack, { foo: fooStore });
 
     expect(get(undoStack).actions).toHaveLength(2);
     expect(get(undoStack).index).toBe(1);
@@ -282,9 +280,7 @@ describe('save', () => {
     action.apply();
     undoStack.push(action);
 
-    const storeIds = new Map<Writable<unknown>, string>();
-    storeIds.set(fooStore, 'foo');
-    const savedUndoStack = undoStack.save(storeIds);
+    const savedUndoStack = undoStack.save({ foo: fooStore });
 
     expect(savedUndoStack).toEqual({
       index: 1,

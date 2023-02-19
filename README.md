@@ -57,7 +57,7 @@ console.log($personDraft); // { name: 'John', age: '23' }
 
 Limitations: The transaction controller can only be used with Svelte stores that hold an Objectish value (object, array, map or set)
 
-### Export undo stack actions
+### Export undo stack
 
 ```ts
 import { undoStackStore, TransactionCtrl } from '@gira-de/svelte-undo';
@@ -72,11 +72,16 @@ transactionCtrl.getDraft(personStore)['age'] = 24;
 transactionCtrl.commit('happy birthday');
 
 // export undo stack actions
-const storeIds = new Map<unknown, string>();
-storeIds.set(personStore, 'person');
-const savedActions = saveActions($undoStack.actions, storeIds);
+const savedActions = undoStack.save($undoStack.actions, {
+  person: personStore,
+});
 
 console.log(savedActions);
-// [{ type: 'init', msg: 'init commit msg' },
-//  { type: 'mutation', msg: 'happy birthday', storeId: 'person', data: ... }]
+// {
+//    index: 1,
+//    actions: [
+//      { type: 'init', msg: 'init commit msg' },
+//      { type: 'mutation', msg: 'happy birthday', storeId: 'person', data: ... }
+//    ]
+// }
 ```

@@ -40,10 +40,10 @@ interface UndoStackStore<TMsg>
   undo: () => void;
   redo: () => void;
   goto: (index: number) => void;
-  save: (storeIds: Map<unknown, string>) => SavedUndoStack<TMsg>;
+  save: (stores: Record<string, unknown>) => SavedUndoStack<TMsg>;
   load: (
     savedUndoStack: SavedUndoStack<TMsg>,
-    stores: Map<string, unknown>,
+    stores: Record<string, unknown>,
   ) => void;
 }
 
@@ -129,7 +129,7 @@ export function undoStackStore<TMsg>(
 
   function load(
     savedUndoStack: SavedUndoStack<TMsg>,
-    stores: Map<string, unknown>,
+    stores: Record<string, unknown>,
   ) {
     const actions = loadActions(savedUndoStack.actions, stores);
     let counter = 0;
@@ -147,9 +147,9 @@ export function undoStackStore<TMsg>(
     });
   }
 
-  function save(storeIds: Map<unknown, string>): SavedUndoStack<TMsg> {
+  function save(stores: Record<string, unknown>): SavedUndoStack<TMsg> {
     return {
-      actions: saveActions(undoStack.actions, storeIds),
+      actions: saveActions(undoStack.actions, stores),
       index: undoStack.index,
     };
   }
