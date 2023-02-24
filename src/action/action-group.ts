@@ -3,13 +3,13 @@ import { UndoAction } from './action';
 export class GroupAction<TMsg> extends UndoAction<
   TMsg,
   undefined,
-  UndoAction<TMsg>[]
+  UndoAction<undefined>[]
 > {
-  constructor(msg: TMsg, actions: UndoAction<TMsg>[] = []) {
+  constructor(msg: TMsg, actions: UndoAction<undefined>[] = []) {
     super(msg, undefined, actions);
   }
 
-  push(action: UndoAction<TMsg>) {
+  push(action: UndoAction<undefined>) {
     this.patch.push(action);
   }
 

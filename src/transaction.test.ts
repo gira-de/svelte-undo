@@ -5,7 +5,7 @@ import { transactionCtrl } from './transaction';
 describe('transactionCtrl', () => {
   test('should return current draft', () => {
     const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1, 'commit');
+    const transactionCtrl1 = transactionCtrl(undoStack1);
     const store1 = writable<Record<string, unknown>>({});
 
     let draft1 = transactionCtrl1.draft(store1);
@@ -17,7 +17,7 @@ describe('transactionCtrl', () => {
 
   test('should commit store value', () => {
     const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1, 'commit');
+    const transactionCtrl1 = transactionCtrl(undoStack1);
     const store1 = writable<Record<string, unknown>>({});
 
     const draft1 = transactionCtrl1.draft(store1);
@@ -31,7 +31,7 @@ describe('transactionCtrl', () => {
 
   test('should commit multiple store values', () => {
     const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1, 'commit');
+    const transactionCtrl1 = transactionCtrl(undoStack1);
     const store1 = writable<Record<string, unknown>>({});
     const store2 = writable<string[]>([]);
 
@@ -51,7 +51,7 @@ describe('transactionCtrl', () => {
 
   test('should rollback store values', () => {
     const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1, 'commit');
+    const transactionCtrl1 = transactionCtrl(undoStack1);
     const store1 = writable<Record<string, unknown>>({});
     const store2 = writable<string[]>([]);
 

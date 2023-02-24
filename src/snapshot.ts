@@ -31,11 +31,12 @@ export function loadActionsSnapshot<TMsg>(
     stackedActions.push(action);
   }
 
-  function loadActionSnapshot(
+  function loadActionSnapshot<TMsg>(
     actionSnapshot: UndoActionSnapshot<TMsg>,
   ): UndoAction<TMsg> {
     if (actionSnapshot.type === 'group') {
-      const actionsSnapshot = actionSnapshot.data as UndoActionSnapshot<TMsg>[];
+      const actionsSnapshot =
+        actionSnapshot.data as UndoActionSnapshot<undefined>[];
       const undoActions = actionsSnapshot.map((a) => loadActionSnapshot(a));
       return new GroupAction(actionSnapshot.msg, undoActions);
     } else if (actionSnapshot.type === 'init') {

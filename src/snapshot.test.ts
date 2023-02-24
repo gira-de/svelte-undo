@@ -193,7 +193,7 @@ describe('createSnapshotFromActions', () => {
   test('should create a snapshot of a group-action', () => {
     const groupAction = new GroupAction('GroupAction');
     const store1 = writable(0);
-    groupAction.push(new SetAction('SetAction', store1, 1));
+    groupAction.push(new SetAction(undefined, store1, 1));
 
     const actionsSnapshot = createSnapshotFromActions([groupAction], {
       store1,
@@ -203,7 +203,7 @@ describe('createSnapshotFromActions', () => {
       {
         type: 'group',
         msg: 'GroupAction',
-        data: [{ type: 'set', msg: 'SetAction', storeId: 'store1', data: 1 }],
+        data: [{ type: 'set', msg: undefined, storeId: 'store1', data: 1 }],
       },
     ]);
   });

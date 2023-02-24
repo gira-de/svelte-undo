@@ -9,8 +9,8 @@ describe('MutateAction', () => {
     const storeA = writable('a');
 
     const action = new GroupAction('GroupAction');
-    action.push(new SetAction('SetAction', store0, 1));
-    action.push(new SetAction('SetAction', storeA, 'b'));
+    action.push(new SetAction(undefined, store0, 1));
+    action.push(new SetAction(undefined, storeA, 'b'));
     action.apply();
     expect(get(store0)).toBe(1);
     expect(get(storeA)).toBe('b');
@@ -30,20 +30,20 @@ describe('MutateAction', () => {
     const store2 = writable('a');
 
     let action = new GroupAction('GroupAction');
-    action.push(new SetAction('set value 1', store1, 1));
-    action.push(new SetAction('set value b', store2, 'b'));
-    action.push(new SetAction('set value 2', store1, 2));
-    action.push(new SetAction('set value c', store2, 'c'));
+    action.push(new SetAction(undefined, store1, 1));
+    action.push(new SetAction(undefined, store2, 'b'));
+    action.push(new SetAction(undefined, store1, 2));
+    action.push(new SetAction(undefined, store2, 'c'));
     action.apply();
     undoStack1.push(action);
     expect(get(store1)).toBe(2);
     expect(get(store2)).toBe('c');
 
     action = new GroupAction('GroupAction');
-    action.push(new SetAction('set value d', store2, 'd'));
-    action.push(new SetAction('set value 3', store1, 3));
-    action.push(new SetAction('set value e', store2, 'e'));
-    action.push(new SetAction('set value 4', store1, 4));
+    action.push(new SetAction(undefined, store2, 'd'));
+    action.push(new SetAction(undefined, store1, 3));
+    action.push(new SetAction(undefined, store2, 'e'));
+    action.push(new SetAction(undefined, store1, 4));
     action.apply();
     undoStack1.push(action);
     expect(get(store1)).toBe(4);

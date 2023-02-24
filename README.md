@@ -39,7 +39,7 @@ import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
 
 // create undo stack with transaction controller
 const myUndoStack = undoStack('created');
-const myTransactionCtrl = transactionCtrl(myUndoStack, 'commit');
+const myTransactionCtrl = transactionCtrl(myUndoStack);
 const personStore = writable({ name: 'John', age: '23' });
 
 // create a draft state for the person store
@@ -64,7 +64,7 @@ import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
 
 // new undo stack
 const myUndoStack = undoStack('created');
-const myTransactionCtrl = transactionCtrl(myUndoStack, 'sub action');
+const myTransactionCtrl = transactionCtrl(myUndoStack);
 
 // create an undo step
 const personStore = writable({ name: 'John', age: '23' });

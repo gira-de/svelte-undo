@@ -7,10 +7,7 @@ import { MutateAction } from './action/action-mutate';
 import { GroupAction } from './action/action-group';
 import type { ActionStack } from './undo-stack';
 
-export function transactionCtrl<TMsg>(
-  actionStack: ActionStack<TMsg>,
-  defaultMsg: TMsg,
-) {
+export function transactionCtrl<TMsg>(actionStack: ActionStack<TMsg>) {
   const draftValues: Map<Writable<Objectish>, Objectish> = new Map();
 
   function draft<TData extends Objectish>(store: Writable<TData>): TData {
@@ -52,10 +49,10 @@ export function transactionCtrl<TMsg>(
       storeUpdate.store.set(storeUpdate.newValue);
       actionStack.push(action);
     } else if (storeUpdates.length > 1) {
-      const action = new GroupAction(msg);
+      const action = new GroupAction<TMsg>(msg);
       for (const storeUpdate of storeUpdates) {
         action.push(
-          new MutateAction(defaultMsg, storeUpdate.store, storeUpdate.patch),
+          new MutateAction(undefined, storeUpdate.store, storeUpdate.patch),
         );
         storeUpdate.store.set(storeUpdate.newValue);
       }
