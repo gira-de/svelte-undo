@@ -1,4 +1,4 @@
-import { SavedUndoStack, undoStackStore } from './undo-stack';
+import { UndoStackSnapshot, undoStackStore } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
 
@@ -266,11 +266,11 @@ describe('clear', () => {
   });
 });
 
-describe('load', () => {
-  test('should load actions into stack', () => {
+describe('loadSnapshot', () => {
+  test('should load undo stack state', () => {
     const undoStack = undoStackStore('created');
 
-    const savedUndoStack: SavedUndoStack<string> = {
+    const savedUndoStack: UndoStackSnapshot<string> = {
       index: 1,
       actions: [
         { type: 'init', msg: 'init' },
@@ -278,7 +278,7 @@ describe('load', () => {
       ],
     };
     const fooStore = writable(1);
-    undoStack.load(savedUndoStack, { foo: fooStore });
+    undoStack.loadSnapshot(savedUndoStack, { foo: fooStore });
 
     expect(get(undoStack).actions).toHaveLength(2);
     expect(get(undoStack).index).toBe(1);
@@ -291,15 +291,15 @@ describe('load', () => {
   });
 });
 
-describe('save', () => {
-  test('should save undo stack actions', () => {
+describe('createSnapshot', () => {
+  test('should export undo stack state', () => {
     const undoStack = undoStackStore('created');
     const fooStore = writable(0);
     const action = new SetAction('set value 1', fooStore, 1);
     action.apply();
     undoStack.push(action);
 
-    const savedUndoStack = undoStack.save({ foo: fooStore });
+    const savedUndoStack = undoStack.createSnapshot({ foo: fooStore });
 
     expect(savedUndoStack).toEqual({
       index: 1,
