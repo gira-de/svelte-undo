@@ -7,29 +7,25 @@ import { MutateAction } from './action/action-mutate';
 import { GroupAction } from './action/action-group';
 import type { ActionStack } from './undo-stack';
 
-export class TransactionCtrl<TMsg> {
-  private readonly draftValues: Map<Writable<Objectish>, Objectish> = new Map();
-  private readonly actionStack: ActionStack<TMsg>;
-  private readonly defaultMsg: TMsg;
+export function transactionCtrl<TMsg>(
+  actionStack: ActionStack<TMsg>,
+  defaultMsg: TMsg,
+) {
+  const draftValues: Map<Writable<Objectish>, Objectish> = new Map();
 
-  constructor(actionStack: ActionStack<TMsg>, defaultMsg: TMsg) {
-    this.actionStack = actionStack;
-    this.defaultMsg = defaultMsg;
-  }
-
-  getDraft<TData extends Objectish>(store: Writable<TData>): TData {
-    let draftValue = this.draftValues.get(store);
+  function draft<TData extends Objectish>(store: Writable<TData>): TData {
+    let draftValue = draftValues.get(store);
     if (draftValue === undefined) {
       const storeValue = get(store);
       draftValue = createDraft(storeValue);
-      this.draftValues.set(store, draftValue);
+      draftValues.set(store, draftValue);
     }
     return draftValue as TData;
   }
 
-  commit(msg: TMsg) {
+  function commit(msg: TMsg) {
     // finish drafts and create patches
-    let storeUpdates = Array.from(this.draftValues, ([store, draftValue]) => {
+    let storeUpdates = Array.from(draftValues, ([store, draftValue]) => {
       let patches: Patch[] = [];
       let inversePatches: Patch[] = [];
       const newValue = finishDraft(draftValue, (p, ip) => {
@@ -54,26 +50,28 @@ export class TransactionCtrl<TMsg> {
         storeUpdate.patch,
       );
       storeUpdate.store.set(storeUpdate.newValue);
-      this.actionStack.push(action);
+      actionStack.push(action);
     } else if (storeUpdates.length > 1) {
       const action = new GroupAction(msg);
       for (const storeUpdate of storeUpdates) {
         action.push(
-          new MutateAction(
-            this.defaultMsg,
-            storeUpdate.store,
-            storeUpdate.patch,
-          ),
+          new MutateAction(defaultMsg, storeUpdate.store, storeUpdate.patch),
         );
         storeUpdate.store.set(storeUpdate.newValue);
       }
-      this.actionStack.push(action);
+      actionStack.push(action);
     }
 
-    this.draftValues.clear();
+    draftValues.clear();
   }
 
-  rollback() {
-    this.draftValues.clear();
+  function rollback() {
+    draftValues.clear();
   }
+
+  return {
+    draft,
+    commit,
+    rollback,
+  };
 }
