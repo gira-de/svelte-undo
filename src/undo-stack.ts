@@ -2,18 +2,9 @@ import type { UndoAction } from './action/action';
 import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
 import { InitAction } from './action/action-init';
-import { loadActions, saveActions, type SavedUndoAction } from './save-load';
+import { loadActions, saveActions, type SavedUndoAction } from './snapshot';
 
-export type SavedUndoStack<TMsg> = {
-  actions: SavedUndoAction<TMsg>[];
-  index: number;
-};
-
-export interface ActionStack<TMsg> {
-  push: (action: UndoAction<TMsg>) => void;
-}
-
-type UndoStack<TMsg> = {
+type UndoStackData<TMsg> = {
   actions: UndoAction<TMsg>[];
   index: number;
   seqNbr: number;
@@ -22,10 +13,9 @@ type UndoStack<TMsg> = {
   counter: number;
 };
 
-export function newUndoStack<TMsg>(firstActionMsg: TMsg): UndoStack<TMsg> {
-  const action: UndoAction<TMsg> = new InitAction(firstActionMsg);
+function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
   return {
-    actions: [action],
+    actions: [new InitAction(initActionMsg)],
     index: 0,
     seqNbr: 0,
     canRedo: false,
@@ -34,24 +24,31 @@ export function newUndoStack<TMsg>(firstActionMsg: TMsg): UndoStack<TMsg> {
   };
 }
 
-interface UndoStackStore<TMsg>
-  extends Readable<UndoStack<TMsg>>,
+export type UndoStackSnapshot<TMsg> = {
+  actions: SavedUndoAction<TMsg>[];
+  index: number;
+};
+
+export interface ActionStack<TMsg> {
+  push: (action: UndoAction<TMsg>) => void;
+}
+
+export interface UndoStack<TMsg>
+  extends Readable<UndoStackData<TMsg>>,
     ActionStack<TMsg> {
   undo: () => void;
   redo: () => void;
   goto: (index: number) => void;
   clear: () => void;
-  save: (stores: Record<string, unknown>) => SavedUndoStack<TMsg>;
-  load: (
-    savedUndoStack: SavedUndoStack<TMsg>,
+  createSnapshot: (stores: Record<string, unknown>) => UndoStackSnapshot<TMsg>;
+  loadSnapshot: (
+    savedUndoStack: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) => void;
 }
 
-export function undoStackStore<TMsg>(
-  firstActionMsg: TMsg,
-): UndoStackStore<TMsg> {
-  const store = writable(newUndoStack(firstActionMsg));
+export function undoStackStore<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
+  const store = writable(newUndoStackData(initActionMsg));
 
   function push(action: UndoAction<TMsg>) {
     store.update((undoStack) => {
@@ -128,11 +125,22 @@ export function undoStackStore<TMsg>(
   }
 
   function clear() {
-    store.set(newUndoStack(firstActionMsg));
+    store.set(newUndoStackData(initActionMsg));
   }
 
-  function load(
-    savedUndoStack: SavedUndoStack<TMsg>,
+  function createSnapshot(
+    stores: Record<string, unknown>,
+  ): UndoStackSnapshot<TMsg> {
+    const undoStack = get(store);
+
+    return {
+      actions: saveActions(undoStack.actions, stores),
+      index: undoStack.index,
+    };
+  }
+
+  function loadSnapshot(
+    savedUndoStack: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) {
     const actions = loadActions(savedUndoStack.actions, stores);
@@ -151,15 +159,6 @@ export function undoStackStore<TMsg>(
     });
   }
 
-  function save(stores: Record<string, unknown>): SavedUndoStack<TMsg> {
-    const undoStack = get(store);
-
-    return {
-      actions: saveActions(undoStack.actions, stores),
-      index: undoStack.index,
-    };
-  }
-
   return {
     subscribe: store.subscribe,
     push,
@@ -167,7 +166,7 @@ export function undoStackStore<TMsg>(
     redo,
     goto,
     clear,
-    save,
-    load,
+    createSnapshot,
+    loadSnapshot,
   };
 }

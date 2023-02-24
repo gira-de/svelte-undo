@@ -4,7 +4,7 @@ import { GroupAction } from './action/action-group';
 import { InitAction } from './action/action-init';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
-import { getActionTypeId, loadActions, saveActions } from './save-load';
+import { getActionTypeId, loadActions, saveActions } from './snapshot';
 
 export class FooAction extends UndoAction<string> {
   constructor() {

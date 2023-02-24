@@ -10,11 +10,11 @@ import type { ActionStack } from './undo-stack';
 export class TransactionCtrl<TMsg> {
   private readonly draftValues: Map<Writable<Objectish>, Objectish> = new Map();
   private readonly actionStack: ActionStack<TMsg>;
-  private readonly subActionMsg: TMsg;
+  private readonly defaultMsg: TMsg;
 
-  constructor(actionStack: ActionStack<TMsg>, subActionMsg: TMsg) {
+  constructor(actionStack: ActionStack<TMsg>, defaultMsg: TMsg) {
     this.actionStack = actionStack;
-    this.subActionMsg = subActionMsg;
+    this.defaultMsg = defaultMsg;
   }
 
   getDraft<TData extends Objectish>(store: Writable<TData>): TData {
@@ -60,7 +60,7 @@ export class TransactionCtrl<TMsg> {
       for (const storeUpdate of storeUpdates) {
         action.push(
           new MutateAction(
-            this.subActionMsg,
+            this.defaultMsg,
             storeUpdate.store,
             storeUpdate.patch,
           ),

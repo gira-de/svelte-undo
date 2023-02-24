@@ -6,4 +6,4 @@ export { SetAction } from './action/action-set';
 export { MutateAction } from './action/action-mutate';
 export type { Immutable } from 'immer';
 export type { Objectish } from 'immer/dist/internal';
-export type { SavedUndoStack } from './undo-stack';
+export type { UndoStack, UndoStackSnapshot } from './undo-stack';
