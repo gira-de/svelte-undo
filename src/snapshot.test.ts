@@ -47,12 +47,12 @@ describe('getActionTypeId', () => {
 
 describe('loadActionsSnapshot', () => {
   test('should load init-action', () => {
-    const savedInitAction = {
+    const initActionSnapshot = {
       type: 'init',
       msg: 'InitAction',
     };
 
-    const undoActions = loadActionsSnapshot([savedInitAction], {});
+    const undoActions = loadActionsSnapshot([initActionSnapshot], {});
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(InitAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -63,7 +63,7 @@ describe('loadActionsSnapshot', () => {
   });
 
   test('should load group-action', () => {
-    const savedGroupAction = {
+    const groupActionSnapshot = {
       type: 'group',
       msg: 'GroupAction',
       data: [
@@ -78,7 +78,7 @@ describe('loadActionsSnapshot', () => {
 
     const store1 = writable(0);
 
-    const undoActions = loadActionsSnapshot([savedGroupAction], { store1 });
+    const undoActions = loadActionsSnapshot([groupActionSnapshot], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(GroupAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -92,7 +92,7 @@ describe('loadActionsSnapshot', () => {
   });
 
   test('should load set-action', () => {
-    const savedSetAction = {
+    const setActionSnapshot = {
       type: 'set',
       storeId: 'store1',
       msg: 'SetAction',
@@ -100,7 +100,7 @@ describe('loadActionsSnapshot', () => {
     };
     const store1 = writable(0);
 
-    const undoActions = loadActionsSnapshot([savedSetAction], { store1 });
+    const undoActions = loadActionsSnapshot([setActionSnapshot], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(SetAction);
     expect(undoActions[0].store).toBe(store1);
@@ -114,7 +114,7 @@ describe('loadActionsSnapshot', () => {
   });
 
   test('should load mutate-action', () => {
-    const savedMutateAction = {
+    const mutateActionSnapshot = {
       type: 'mutate',
       storeId: 'store1',
       msg: 'MutateAction',
@@ -125,7 +125,7 @@ describe('loadActionsSnapshot', () => {
     };
     const store1 = writable({ value: 0 });
 
-    const undoActions = loadActionsSnapshot([savedMutateAction], { store1 });
+    const undoActions = loadActionsSnapshot([mutateActionSnapshot], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(MutateAction);
     expect(undoActions[0].store).toBe(store1);
@@ -139,18 +139,20 @@ describe('loadActionsSnapshot', () => {
   });
 
   test('should throw if set-actin does not contain a store id', () => {
-    const savedSetAction = {
+    const setActionSnapshot = {
       type: 'set',
       msg: 'SetAction',
       data: 1,
     };
     const store1 = writable(0);
 
-    expect(() => loadActionsSnapshot([savedSetAction], { store1 })).toThrow();
+    expect(() =>
+      loadActionsSnapshot([setActionSnapshot], { store1 }),
+    ).toThrow();
   });
 
   test('should throw if mutate-actin does not contain a store id', () => {
-    const savedMutateAction = {
+    const mutateActionSnapshot = {
       type: 'mutate',
       msg: 'MutateAction',
       data: {
@@ -161,39 +163,43 @@ describe('loadActionsSnapshot', () => {
     const store1 = writable({ value: 0 });
 
     expect(() =>
-      loadActionsSnapshot([savedMutateAction], { store1 }),
+      loadActionsSnapshot([mutateActionSnapshot], { store1 }),
     ).toThrow();
   });
 
   test('should throw if action type id is unkown', () => {
-    const savedFooAction = {
+    const fooActionSnapshot = {
       type: 'foo',
       storeId: 'store1',
       msg: 'FooAction',
     };
     const store1 = writable(0);
 
-    expect(() => loadActionsSnapshot([savedFooAction], { store1 })).toThrow();
+    expect(() =>
+      loadActionsSnapshot([fooActionSnapshot], { store1 }),
+    ).toThrow();
   });
 });
 
 describe('createSnapshotFromActions', () => {
-  test('should save init-action', () => {
+  test('should create a snapshot of an init-action', () => {
     const initAction = new InitAction('InitAction');
 
-    const savedActions = createSnapshotFromActions([initAction], {});
+    const actionsSnapshot = createSnapshotFromActions([initAction], {});
 
-    expect(savedActions).toEqual([{ type: 'init', msg: 'InitAction' }]);
+    expect(actionsSnapshot).toEqual([{ type: 'init', msg: 'InitAction' }]);
   });
 
-  test('should save group-action', () => {
+  test('should create a snapshot of a group-action', () => {
     const groupAction = new GroupAction('GroupAction');
     const store1 = writable(0);
     groupAction.push(new SetAction('SetAction', store1, 1));
 
-    const savedActions = createSnapshotFromActions([groupAction], { store1 });
+    const actionsSnapshot = createSnapshotFromActions([groupAction], {
+      store1,
+    });
 
-    expect(savedActions).toEqual([
+    expect(actionsSnapshot).toEqual([
       {
         type: 'group',
         msg: 'GroupAction',
@@ -202,13 +208,13 @@ describe('createSnapshotFromActions', () => {
     ]);
   });
 
-  test('should save set-action', () => {
+  test('should create a snapshot of a set-action', () => {
     const store1 = writable(0);
 
     const setAction = new SetAction('SetAction', store1, 1);
-    const savedActions = createSnapshotFromActions([setAction], { store1 });
+    const actionsSnapshot = createSnapshotFromActions([setAction], { store1 });
 
-    expect(savedActions).toEqual([
+    expect(actionsSnapshot).toEqual([
       {
         type: 'set',
         storeId: 'store1',
@@ -218,16 +224,18 @@ describe('createSnapshotFromActions', () => {
     ]);
   });
 
-  test('should save mutate-action', () => {
+  test('should create a snapshot of a mutate-action', () => {
     const store1 = writable({ value: 0 });
     const patch: MutateActionPatch = {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
       inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
     };
     const mutateAction = new MutateAction('MutateAction', store1, patch);
-    const savedActions = createSnapshotFromActions([mutateAction], { store1 });
+    const actionsSnapshot = createSnapshotFromActions([mutateAction], {
+      store1,
+    });
 
-    expect(savedActions).toEqual([
+    expect(actionsSnapshot).toEqual([
       {
         type: 'mutate',
         storeId: 'store1',
@@ -237,19 +245,19 @@ describe('createSnapshotFromActions', () => {
     ]);
   });
 
-  test('should save multiple actions', () => {
+  test('should create a snapshot of multiple actions', () => {
     const store1 = writable(0);
     const setAction = new SetAction('SetAction', store1, 1);
 
     const store2 = writable('hello');
     const setAction2 = new SetAction('SetAction', store2, 'world');
 
-    const savedActions = createSnapshotFromActions([setAction, setAction2], {
+    const actionsSnapshot = createSnapshotFromActions([setAction, setAction2], {
       store1,
       store2,
     });
 
-    expect(savedActions).toEqual([
+    expect(actionsSnapshot).toEqual([
       {
         type: 'set',
         storeId: 'store1',

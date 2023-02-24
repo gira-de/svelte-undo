@@ -46,7 +46,7 @@ export interface UndoStack<TMsg>
   clear: () => void;
   createSnapshot: (stores: Record<string, unknown>) => UndoStackSnapshot<TMsg>;
   loadSnapshot: (
-    savedUndoStack: UndoStackSnapshot<TMsg>,
+    undoStackSnapshot: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) => void;
 }
@@ -144,10 +144,10 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
   }
 
   function loadSnapshot(
-    savedUndoStack: UndoStackSnapshot<TMsg>,
+    undoStackSnapshot: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) {
-    const actions = loadActionsSnapshot(savedUndoStack.actions, stores);
+    const actions = loadActionsSnapshot(undoStackSnapshot.actions, stores);
     let counter = 0;
     for (const action of actions) {
       action.seqNbr = counter++;
@@ -156,10 +156,10 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     store.set({
       actions,
       counter,
-      index: savedUndoStack.index,
-      seqNbr: actions[savedUndoStack.index].seqNbr,
-      canRedo: savedUndoStack.index < savedUndoStack.actions.length - 1,
-      canUndo: savedUndoStack.index > 0,
+      index: undoStackSnapshot.index,
+      seqNbr: actions[undoStackSnapshot.index].seqNbr,
+      canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
+      canUndo: undoStackSnapshot.index > 0,
     });
   }
 

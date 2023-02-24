@@ -271,7 +271,7 @@ describe('loadSnapshot', () => {
   test('should load undo stack state', () => {
     const undoStack1 = undoStack('created');
 
-    const savedUndoStack: UndoStackSnapshot<string> = {
+    const undoStackSnapshot: UndoStackSnapshot<string> = {
       index: 1,
       actions: [
         { type: 'init', msg: 'init' },
@@ -279,7 +279,7 @@ describe('loadSnapshot', () => {
       ],
     };
     const fooStore = writable(1);
-    undoStack1.loadSnapshot(savedUndoStack, { foo: fooStore });
+    undoStack1.loadSnapshot(undoStackSnapshot, { foo: fooStore });
 
     expect(get(undoStack1).actions).toHaveLength(2);
     expect(get(undoStack1).index).toBe(1);
@@ -300,9 +300,9 @@ describe('createSnapshot', () => {
     action.apply();
     undoStack1.push(action);
 
-    const savedUndoStack = undoStack1.createSnapshot({ foo: fooStore });
+    const undoStackSnapshot = undoStack1.createSnapshot({ foo: fooStore });
 
-    expect(savedUndoStack).toEqual({
+    expect(undoStackSnapshot).toEqual({
       index: 1,
       actions: [
         { type: 'init', msg: 'created' },
