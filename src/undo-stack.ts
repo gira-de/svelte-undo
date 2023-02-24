@@ -2,7 +2,11 @@ import type { UndoAction } from './action/action';
 import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
 import { InitAction } from './action/action-init';
-import { loadActions, saveActions, type SavedUndoAction } from './snapshot';
+import {
+  loadActionsSnapshot,
+  createSnapshotFromActions,
+  type UndoActionSnapshot,
+} from './snapshot';
 
 type UndoStackData<TMsg> = {
   actions: UndoAction<TMsg>[];
@@ -25,7 +29,7 @@ function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
 }
 
 export type UndoStackSnapshot<TMsg> = {
-  actions: SavedUndoAction<TMsg>[];
+  actions: UndoActionSnapshot<TMsg>[];
   index: number;
 };
 
@@ -134,7 +138,7 @@ export function undoStackStore<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     const undoStack = get(store);
 
     return {
-      actions: saveActions(undoStack.actions, stores),
+      actions: createSnapshotFromActions(undoStack.actions, stores),
       index: undoStack.index,
     };
   }
@@ -143,7 +147,7 @@ export function undoStackStore<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     savedUndoStack: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) {
-    const actions = loadActions(savedUndoStack.actions, stores);
+    const actions = loadActionsSnapshot(savedUndoStack.actions, stores);
     let counter = 0;
     for (const action of actions) {
       action.seqNbr = counter++;

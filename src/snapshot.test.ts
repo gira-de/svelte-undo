@@ -4,7 +4,13 @@ import { GroupAction } from './action/action-group';
 import { InitAction } from './action/action-init';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
-import { getActionTypeId, loadActions, saveActions } from './snapshot';
+import {
+  exportedForTesting,
+  loadActionsSnapshot,
+  createSnapshotFromActions,
+} from './snapshot';
+
+const { getActionTypeId } = exportedForTesting;
 
 export class FooAction extends UndoAction<string> {
   constructor() {
@@ -39,14 +45,14 @@ describe('getActionTypeId', () => {
   });
 });
 
-describe('loadActions', () => {
+describe('loadActionsSnapshot', () => {
   test('should load init-action', () => {
     const savedInitAction = {
       type: 'init',
       msg: 'InitAction',
     };
 
-    const undoActions = loadActions([savedInitAction], {});
+    const undoActions = loadActionsSnapshot([savedInitAction], {});
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(InitAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -72,7 +78,7 @@ describe('loadActions', () => {
 
     const store1 = writable(0);
 
-    const undoActions = loadActions([savedGroupAction], { store1 });
+    const undoActions = loadActionsSnapshot([savedGroupAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(GroupAction);
     expect(undoActions[0].store).toBeUndefined();
@@ -94,7 +100,7 @@ describe('loadActions', () => {
     };
     const store1 = writable(0);
 
-    const undoActions = loadActions([savedSetAction], { store1 });
+    const undoActions = loadActionsSnapshot([savedSetAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(SetAction);
     expect(undoActions[0].store).toBe(store1);
@@ -119,7 +125,7 @@ describe('loadActions', () => {
     };
     const store1 = writable({ value: 0 });
 
-    const undoActions = loadActions([savedMutateAction], { store1 });
+    const undoActions = loadActionsSnapshot([savedMutateAction], { store1 });
     expect(undoActions).toHaveLength(1);
     expect(undoActions[0]).instanceOf(MutateAction);
     expect(undoActions[0].store).toBe(store1);
@@ -140,7 +146,7 @@ describe('loadActions', () => {
     };
     const store1 = writable(0);
 
-    expect(() => loadActions([savedSetAction], { store1 })).toThrow();
+    expect(() => loadActionsSnapshot([savedSetAction], { store1 })).toThrow();
   });
 
   test('should throw if mutate-actin does not contain a store id', () => {
@@ -154,7 +160,9 @@ describe('loadActions', () => {
     };
     const store1 = writable({ value: 0 });
 
-    expect(() => loadActions([savedMutateAction], { store1 })).toThrow();
+    expect(() =>
+      loadActionsSnapshot([savedMutateAction], { store1 }),
+    ).toThrow();
   });
 
   test('should throw if action type id is unkown', () => {
@@ -165,15 +173,15 @@ describe('loadActions', () => {
     };
     const store1 = writable(0);
 
-    expect(() => loadActions([savedFooAction], { store1 })).toThrow();
+    expect(() => loadActionsSnapshot([savedFooAction], { store1 })).toThrow();
   });
 });
 
-describe('saveActions', () => {
+describe('createSnapshotFromActions', () => {
   test('should save init-action', () => {
     const initAction = new InitAction('InitAction');
 
-    const savedActions = saveActions([initAction], {});
+    const savedActions = createSnapshotFromActions([initAction], {});
 
     expect(savedActions).toEqual([{ type: 'init', msg: 'InitAction' }]);
   });
@@ -183,7 +191,7 @@ describe('saveActions', () => {
     const store1 = writable(0);
     groupAction.push(new SetAction('SetAction', store1, 1));
 
-    const savedActions = saveActions([groupAction], { store1 });
+    const savedActions = createSnapshotFromActions([groupAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -198,7 +206,7 @@ describe('saveActions', () => {
     const store1 = writable(0);
 
     const setAction = new SetAction('SetAction', store1, 1);
-    const savedActions = saveActions([setAction], { store1 });
+    const savedActions = createSnapshotFromActions([setAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -217,7 +225,7 @@ describe('saveActions', () => {
       inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
     };
     const mutateAction = new MutateAction('MutateAction', store1, patch);
-    const savedActions = saveActions([mutateAction], { store1 });
+    const savedActions = createSnapshotFromActions([mutateAction], { store1 });
 
     expect(savedActions).toEqual([
       {
@@ -236,7 +244,7 @@ describe('saveActions', () => {
     const store2 = writable('hello');
     const setAction2 = new SetAction('SetAction', store2, 'world');
 
-    const savedActions = saveActions([setAction, setAction2], {
+    const savedActions = createSnapshotFromActions([setAction, setAction2], {
       store1,
       store2,
     });
@@ -261,6 +269,6 @@ describe('saveActions', () => {
     const store1 = writable(0);
     const setAction = new SetAction('SetAction', store1, 1);
 
-    expect(() => saveActions([setAction], {})).toThrow();
+    expect(() => createSnapshotFromActions([setAction], {})).toThrow();
   });
 });

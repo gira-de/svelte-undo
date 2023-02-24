@@ -6,7 +6,7 @@ import { InitAction } from './action/action-init';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
 
-export type SavedUndoAction<TMsg> = {
+export type UndoActionSnapshot<TMsg> = {
   type: string;
   storeId?: string;
   msg: TMsg;
@@ -20,25 +20,23 @@ const actionIds = {
   [MutateAction.name]: 'mutate',
 };
 
-export function getActionTypeId(action: UndoAction<unknown>) {
-  return actionIds[action.constructor.name];
-}
-
-export function loadActions<TMsg>(
-  savedUndoActions: SavedUndoAction<TMsg>[],
+export function loadActionsSnapshot<TMsg>(
+  savedUndoActions: UndoActionSnapshot<TMsg>[],
   stores: Record<string, unknown>,
 ) {
   const stackedActions: UndoAction<TMsg>[] = [];
 
   for (const savedAction of savedUndoActions) {
-    const action = loadAction(savedAction);
+    const action = loadActionSnapshot(savedAction);
     stackedActions.push(action);
   }
 
-  function loadAction(savedAction: SavedUndoAction<TMsg>): UndoAction<TMsg> {
+  function loadActionSnapshot(
+    savedAction: UndoActionSnapshot<TMsg>,
+  ): UndoAction<TMsg> {
     if (savedAction.type === 'group') {
-      const savedGroupActions = savedAction.data as SavedUndoAction<TMsg>[];
-      const undoActions = savedGroupActions.map((a) => loadAction(a));
+      const savedGroupActions = savedAction.data as UndoActionSnapshot<TMsg>[];
+      const undoActions = savedGroupActions.map((a) => loadActionSnapshot(a));
       return new GroupAction(savedAction.msg, undoActions);
     } else if (savedAction.type === 'init') {
       return new InitAction(savedAction.msg);
@@ -68,7 +66,7 @@ export function loadActions<TMsg>(
   return stackedActions;
 }
 
-export function saveActions<TMsg>(
+export function createSnapshotFromActions<TMsg>(
   actions: UndoAction<TMsg>[],
   stores: Record<string, unknown>,
 ) {
@@ -77,19 +75,19 @@ export function saveActions<TMsg>(
     storeIds.set(value, key);
   }
 
-  return _saveActions(actions, storeIds);
+  return createSnapshot(actions, storeIds);
 }
 
-function _saveActions<TMsg>(
+function createSnapshot<TMsg>(
   actions: UndoAction<TMsg>[],
   storeIds: Map<unknown, string>,
 ) {
-  const savedActions: SavedUndoAction<TMsg>[] = [];
+  const savedActions: UndoActionSnapshot<TMsg>[] = [];
 
   for (const action of actions) {
     let data: unknown = undefined;
     if (Array.isArray(action.patch)) {
-      data = _saveActions(action.patch as UndoAction<TMsg>[], storeIds);
+      data = createSnapshot(action.patch as UndoAction<TMsg>[], storeIds);
     } else {
       data = action.patch;
     }
@@ -112,3 +110,11 @@ function _saveActions<TMsg>(
 
   return savedActions;
 }
+
+function getActionTypeId(action: UndoAction<unknown>) {
+  return actionIds[action.constructor.name];
+}
+
+export const exportedForTesting = {
+  getActionTypeId,
+};
