@@ -6,13 +6,13 @@ Provides low level utility functions to use Svelte Stores in combination with re
 
 ## Usage Examples
 
-### Use undo stack to push actions
+### Push actions to undo stack
 
 ```ts
-import { undoStackStore } from '@gira-de/svelte-undo';
+import { undoStack, SetAction } from '@gira-de/svelte-undo';
 
 // create undo stack
-const undoStack = undoStackStore('first stack message');
+const myUndoStack = undoStack('first stack message');
 const msgStore = writable('old value');
 
 // create a new action to update the store value
@@ -23,23 +23,23 @@ action.apply();
 console.log($msgStore); // 'new value'
 
 // push action onto the undo stack
-undoStack.push(action);
+myUndoStack.push(action);
 
 // call undo() to revert the changes
-undoStack.undo();
+myUndoStack.undo();
 console.log($msgStore); // 'old value'
 ```
 
-### Use transactions (recommended)
+### Use transactions
 
-To avoid writing boilerplate code like in the example before (create, apply and push actions), the transaction controller can be used instead.
+Writing and pushing actions to the undo stack might create a lot of boilerplate code. The use of Transaction simplifies this.
 
 ```ts
-import { undoStackStore, TransactionCtrl } from '@gira-de/svelte-undo';
+import { undoStack, TransactionCtrl } from '@gira-de/svelte-undo';
 
 // create undo stack with transaction controller
-const undoStack = undoStackStore('created');
-const transactionCtrl = new TransactionCtrl(undoStack, 'commit');
+const myUndoStack = undoStack('created');
+const transactionCtrl = new TransactionCtrl(myUndoStack, 'commit');
 const personStore = writable({ name: 'John', age: '23' });
 
 // create a draft state for the person store
@@ -48,40 +48,49 @@ personDraft['age'] = 24;
 
 // apply all draft changes
 transactionCtrl.commit('happy birthday');
-console.log($personDraft); // { name: 'John', age: '24' }
+console.log($personStore); // { name: 'John', age: '24' }
 
 // call undo() to revert the changes
-undoStack.undo();
-console.log($personDraft); // { name: 'John', age: '23' }
+myUndoStack.undo();
+console.log($personStore); // { name: 'John', age: '23' }
 ```
 
-Limitations: The transaction controller can only be used with Svelte stores that hold an Objectish value (object, array, map or set)
+Limitations: The transaction controller can only be used with Svelte stores that hold an Objectish value (object, array, map, set)
 
-### Export undo stack
+### Save & Load undo stack
 
 ```ts
-import { undoStackStore, TransactionCtrl } from '@gira-de/svelte-undo';
+import { undoStack, TransactionCtrl } from '@gira-de/svelte-undo';
 
-// create undo stack
-const undoStack = undoStackStore('created');
-const transactionCtrl = new TransactionCtrl(undoStack, 'init commit msg');
+// new undo stack
+const myUndoStack = undoStack('created');
+const transactionCtrl = new TransactionCtrl(myUndoStack, 'sub action');
 
-// add undo stack entry
+// create an undo step
 const personStore = writable({ name: 'John', age: '23' });
 transactionCtrl.getDraft(personStore)['age'] = 24;
 transactionCtrl.commit('happy birthday');
 
-// export undo stack actions
-const savedActions = undoStack.save($undoStack.actions, {
+// create a snapshot of the current state
+const stores = {
   person: personStore,
-});
+};
+const undoStackSnapshot = myUndoStack.createSnapshot(stores);
 
-console.log(savedActions);
+// snapshot can easily be stringified to json
+JSON.stringify(undoStackSnapshot);
 // {
 //    index: 1,
 //    actions: [
-//      { type: 'init', msg: 'init commit msg' },
-//      { type: 'mutation', msg: 'happy birthday', storeId: 'person', data: ... }
+//      { type: 'init', msg: 'created' },
+//      { type: 'mutate', msg: 'happy birthday', storeId: 'person', data: ... }
 //    ]
 // }
+
+// later: load the undo stack snapshot
+myUndoStack.loadSnapshot(undoStackSnapshot, stores);
 ```
+
+## Known issues
+
+- Working with arrays (push/remove items) might create a very large undo stack entries
