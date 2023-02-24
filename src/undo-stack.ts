@@ -10,21 +10,21 @@ import {
 
 type UndoStackData<TMsg> = {
   actions: UndoAction<TMsg>[];
-  index: number;
-  seqNbr: number;
   canRedo: boolean;
   canUndo: boolean;
-  counter: number;
+  index: number;
+  seqNbr: number;
+  ticker: number;
 };
 
 function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
   return {
     actions: [new InitAction(initActionMsg)],
-    index: 0,
-    seqNbr: 0,
     canRedo: false,
     canUndo: false,
-    counter: 0,
+    index: 0,
+    seqNbr: 0,
+    ticker: 0,
   };
 }
 
@@ -56,8 +56,8 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
 
   function push(action: UndoAction<TMsg>) {
     store.update((undoStack) => {
-      undoStack.counter++;
-      action.seqNbr = undoStack.counter;
+      undoStack.ticker++;
+      action.seqNbr = undoStack.ticker;
       const deleteCount = undoStack.actions.length - undoStack.index - 1;
       undoStack.actions.splice(undoStack.index + 1, deleteCount, action);
       undoStack.index = undoStack.actions.length - 1;
@@ -79,7 +79,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.canUndo = undoStack.index > 0;
       undoStack.canRedo = true;
       undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
-      undoStack.counter++;
+      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -95,7 +95,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.canUndo = true;
       undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
       undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
-      undoStack.counter++;
+      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -123,7 +123,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.canUndo = undoStack.index > 0;
       undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
       undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
-      undoStack.counter++;
+      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -148,14 +148,14 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     stores: Record<string, unknown>,
   ) {
     const actions = loadActionsSnapshot(undoStackSnapshot.actions, stores);
-    let counter = 0;
+    let ticker = 0;
     for (const action of actions) {
-      action.seqNbr = counter++;
+      action.seqNbr = ticker++;
     }
 
     store.set({
       actions,
-      counter,
+      ticker,
       index: undoStackSnapshot.index,
       seqNbr: actions[undoStackSnapshot.index].seqNbr,
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,

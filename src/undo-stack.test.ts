@@ -262,7 +262,7 @@ describe('clear', () => {
     expect(get(undoStack1).actions[0].msg).toBe('created');
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).counter).toBe(0);
+    expect(get(undoStack1).ticker).toBe(0);
     expect(get(undoStack1).seqNbr).toBe(0);
   });
 });
