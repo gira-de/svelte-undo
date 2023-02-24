@@ -1,274 +1,275 @@
-import { UndoStackSnapshot, undoStackStore } from './undo-stack';
+import { UndoStackSnapshot, undoStack } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
 
 describe('push', () => {
   test('should add a new item to the stack', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(1);
-    expect(get(undoStack).actions).toHaveLength(1);
+    expect(get(undoStack1).actions).toHaveLength(1);
 
     let action = new SetAction('set value 2', store, 2);
     action.apply();
-    undoStack.push(action);
-    expect(get(undoStack).actions).toHaveLength(2);
+    undoStack1.push(action);
+    expect(get(undoStack1).actions).toHaveLength(2);
 
     action = new SetAction('set value 3', store, 3);
     action.apply();
-    undoStack.push(action);
-    expect(get(undoStack).actions).toHaveLength(3);
+    undoStack1.push(action);
+    expect(get(undoStack1).actions).toHaveLength(3);
   });
 });
 
 describe('undo', () => {
   test('should load previous state', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable('old value');
 
     const action = new SetAction('set new value', store, 'new value');
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     expect(get(store)).toBe('new value');
 
-    undoStack.undo();
+    undoStack1.undo();
     expect(get(store)).toBe('old value');
   });
 
   test('should do nothing if their is no previous state', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable('old value');
 
-    undoStack.undo();
+    undoStack1.undo();
     expect(get(store)).toBe('old value');
   });
 });
 
 describe('redo', () => {
   test('should restore the next step', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable('old value');
 
     const action = new SetAction('set new value', store, 'new value');
     action.apply();
-    undoStack.push(action);
-    undoStack.undo();
+    undoStack1.push(action);
+    undoStack1.undo();
 
-    undoStack.redo();
+    undoStack1.redo();
     expect(get(store)).toBe('new value');
   });
 
   test('should do nothing if their is no next step', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable('old value');
 
-    undoStack.redo();
+    undoStack1.redo();
     expect(get(store)).toBe('old value');
   });
 });
 
 describe('goto', () => {
   test('should load the specified state', () => {
-    const undoStack = undoStackStore('created');
-    const getSeqNbr = () => get(undoStack).actions[get(undoStack).index].seqNbr;
+    const undoStack1 = undoStack('created');
+    const getSeqNbr = () =>
+      get(undoStack1).actions[get(undoStack1).index].seqNbr;
 
     const store = writable(0);
     const s0 = getSeqNbr();
     let action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     action = new SetAction('set value 2', store, 2);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     const s2 = getSeqNbr();
     action = new SetAction('set value 3', store, 3);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     action = new SetAction('set value 4', store, 4);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     action = new SetAction('set value 5', store, 5);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     const s5 = getSeqNbr();
     action = new SetAction('set value 6', store, 6);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     const s6 = getSeqNbr();
 
     // go backwards
-    undoStack.goto(s2);
+    undoStack1.goto(s2);
     expect(get(store)).toBe(2);
 
     // go forward
-    undoStack.goto(s5);
+    undoStack1.goto(s5);
     expect(get(store)).toBe(5);
 
     // go to first state
-    undoStack.goto(s0);
+    undoStack1.goto(s0);
     expect(get(store)).toBe(0);
 
     // go to last state
-    undoStack.goto(s6);
+    undoStack1.goto(s6);
     expect(get(store)).toBe(6);
   });
 
   test('should do nothing if specified state does not exist', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable('old value');
 
-    undoStack.goto(999);
+    undoStack1.goto(999);
     expect(get(store)).toBe('old value');
   });
 });
 
 describe('canUndo & canRedo', () => {
   test('should return the correct result', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(0);
 
     // [<0>]
-    expect(get(undoStack).canUndo).toBe(false);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(false);
 
     let action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     // [0, <1>]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
 
     action = new SetAction('set value 2', store, 2);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     // [0, 1, <2>]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
 
-    undoStack.undo();
+    undoStack1.undo();
     // [0, <1>, 2]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(true);
 
-    undoStack.undo();
+    undoStack1.undo();
     // [<0>, 1, 2]
-    expect(get(undoStack).canUndo).toBe(false);
-    expect(get(undoStack).canRedo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(true);
 
-    undoStack.redo();
+    undoStack1.redo();
     // [0, <1>, 2]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(true);
 
-    undoStack.redo();
+    undoStack1.redo();
     // [0, 1, <2>]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
 
-    undoStack.goto(1);
+    undoStack1.goto(1);
     // [0, <1>, 2]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(true);
 
-    undoStack.goto(0);
+    undoStack1.goto(0);
     // [<0>, 1, 2]
-    expect(get(undoStack).canUndo).toBe(false);
-    expect(get(undoStack).canRedo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(true);
 
-    undoStack.goto(2);
+    undoStack1.goto(2);
     // [0, 1, <2>]
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
   });
 });
 
 describe('subscribe', () => {
   test('should be called on push action', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(0);
 
     const onChanged = vitest.fn();
-    undoStack.subscribe(onChanged);
+    undoStack1.subscribe(onChanged);
 
     const action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     expect(onChanged).toHaveBeenCalledTimes(2);
-    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack));
+    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack1));
   });
 
   test('should be called on undo', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(0);
 
     const action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
 
     const onChanged = vitest.fn();
-    undoStack.subscribe(onChanged);
-    undoStack.undo();
+    undoStack1.subscribe(onChanged);
+    undoStack1.undo();
     expect(onChanged).toHaveBeenCalledTimes(2);
-    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack));
+    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack1));
   });
 
   test('should be called on redo', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(0);
 
     const action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
-    undoStack.undo();
+    undoStack1.push(action);
+    undoStack1.undo();
 
     const onChanged = vitest.fn();
-    undoStack.subscribe(onChanged);
-    undoStack.redo();
+    undoStack1.subscribe(onChanged);
+    undoStack1.redo();
     expect(onChanged).toHaveBeenCalledTimes(2);
-    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack));
+    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack1));
   });
 
   test('should not be called after unsubscribe', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const store = writable(0);
 
     const action = new SetAction('set value 1', store, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
 
     const onChanged = vitest.fn();
-    const unsubscribe = undoStack.subscribe(onChanged);
-    undoStack.undo();
+    const unsubscribe = undoStack1.subscribe(onChanged);
+    undoStack1.undo();
 
     unsubscribe();
-    undoStack.redo();
-    undoStack.undo();
+    undoStack1.redo();
+    undoStack1.undo();
     expect(onChanged).toHaveBeenCalledTimes(2);
-    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack));
+    expect(onChanged).toHaveBeenLastCalledWith(get(undoStack1));
   });
 });
 
 describe('clear', () => {
   test('should all actions from stack and create a new init action', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
 
     const action = new SetAction('set value 1', writable(0), 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
 
-    undoStack.clear();
-    expect(get(undoStack).index).toBe(0);
-    expect(get(undoStack).actions).toHaveLength(1);
-    expect(get(undoStack).actions[0].msg).toBe('created');
-    expect(get(undoStack).canUndo).toBe(false);
-    expect(get(undoStack).canRedo).toBe(false);
-    expect(get(undoStack).counter).toBe(0);
-    expect(get(undoStack).seqNbr).toBe(0);
+    undoStack1.clear();
+    expect(get(undoStack1).index).toBe(0);
+    expect(get(undoStack1).actions).toHaveLength(1);
+    expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(false);
+    expect(get(undoStack1).counter).toBe(0);
+    expect(get(undoStack1).seqNbr).toBe(0);
   });
 });
 
 describe('loadSnapshot', () => {
   test('should load undo stack state', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
 
     const savedUndoStack: UndoStackSnapshot<string> = {
       index: 1,
@@ -278,28 +279,28 @@ describe('loadSnapshot', () => {
       ],
     };
     const fooStore = writable(1);
-    undoStack.loadSnapshot(savedUndoStack, { foo: fooStore });
+    undoStack1.loadSnapshot(savedUndoStack, { foo: fooStore });
 
-    expect(get(undoStack).actions).toHaveLength(2);
-    expect(get(undoStack).index).toBe(1);
-    expect(get(undoStack).canUndo).toBe(true);
-    expect(get(undoStack).canRedo).toBe(false);
+    expect(get(undoStack1).actions).toHaveLength(2);
+    expect(get(undoStack1).index).toBe(1);
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
 
-    undoStack.undo();
-    expect(get(undoStack).index).toBe(0);
+    undoStack1.undo();
+    expect(get(undoStack1).index).toBe(0);
     expect(get(fooStore)).toBe(0);
   });
 });
 
 describe('createSnapshot', () => {
   test('should export undo stack state', () => {
-    const undoStack = undoStackStore('created');
+    const undoStack1 = undoStack('created');
     const fooStore = writable(0);
     const action = new SetAction('set value 1', fooStore, 1);
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
 
-    const savedUndoStack = undoStack.createSnapshot({ foo: fooStore });
+    const savedUndoStack = undoStack1.createSnapshot({ foo: fooStore });
 
     expect(savedUndoStack).toEqual({
       index: 1,
