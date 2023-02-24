@@ -17,12 +17,3 @@ export abstract class UndoAction<TMsg, TStore = unknown, TPatch = unknown> {
   abstract apply(): void;
   abstract revert(): void;
 }
-
-// SAVE AND LOAD
-
-export type SaveableAction<TData, TMsg> = {
-  type: string;
-  storeId?: string;
-  msg: TMsg;
-  data: TData;
-};

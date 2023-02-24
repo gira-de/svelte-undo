@@ -21,42 +21,42 @@ const actionIds = {
 };
 
 export function loadActionsSnapshot<TMsg>(
-  savedUndoActions: UndoActionSnapshot<TMsg>[],
+  actionsSnapshot: UndoActionSnapshot<TMsg>[],
   stores: Record<string, unknown>,
 ) {
   const stackedActions: UndoAction<TMsg>[] = [];
 
-  for (const savedAction of savedUndoActions) {
-    const action = loadActionSnapshot(savedAction);
+  for (const actionSnapshot of actionsSnapshot) {
+    const action = loadActionSnapshot(actionSnapshot);
     stackedActions.push(action);
   }
 
   function loadActionSnapshot(
-    savedAction: UndoActionSnapshot<TMsg>,
+    actionSnapshot: UndoActionSnapshot<TMsg>,
   ): UndoAction<TMsg> {
-    if (savedAction.type === 'group') {
-      const savedGroupActions = savedAction.data as UndoActionSnapshot<TMsg>[];
-      const undoActions = savedGroupActions.map((a) => loadActionSnapshot(a));
-      return new GroupAction(savedAction.msg, undoActions);
-    } else if (savedAction.type === 'init') {
-      return new InitAction(savedAction.msg);
+    if (actionSnapshot.type === 'group') {
+      const actionsSnapshot = actionSnapshot.data as UndoActionSnapshot<TMsg>[];
+      const undoActions = actionsSnapshot.map((a) => loadActionSnapshot(a));
+      return new GroupAction(actionSnapshot.msg, undoActions);
+    } else if (actionSnapshot.type === 'init') {
+      return new InitAction(actionSnapshot.msg);
     }
 
-    if (!savedAction.storeId) {
+    if (!actionSnapshot.storeId) {
       throw new Error('missing storeId');
     }
 
-    if (savedAction.type === 'set') {
+    if (actionSnapshot.type === 'set') {
       return new SetAction(
-        savedAction.msg,
-        stores[savedAction.storeId] as Writable<unknown>,
-        savedAction.data,
+        actionSnapshot.msg,
+        stores[actionSnapshot.storeId] as Writable<unknown>,
+        actionSnapshot.data,
       );
-    } else if (savedAction.type === 'mutate') {
+    } else if (actionSnapshot.type === 'mutate') {
       return new MutateAction(
-        savedAction.msg,
-        stores[savedAction.storeId] as Writable<Objectish>,
-        savedAction.data as MutateActionPatch,
+        actionSnapshot.msg,
+        stores[actionSnapshot.storeId] as Writable<Objectish>,
+        actionSnapshot.data as MutateActionPatch,
       );
     }
 
@@ -82,7 +82,7 @@ function createSnapshot<TMsg>(
   actions: UndoAction<TMsg>[],
   storeIds: Map<unknown, string>,
 ) {
-  const savedActions: UndoActionSnapshot<TMsg>[] = [];
+  const actionSnapshots: UndoActionSnapshot<TMsg>[] = [];
 
   for (const action of actions) {
     let data: unknown = undefined;
@@ -100,7 +100,7 @@ function createSnapshot<TMsg>(
       }
     }
 
-    savedActions.push({
+    actionSnapshots.push({
       type: getActionTypeId(action),
       storeId,
       msg: action.msg,
@@ -108,7 +108,7 @@ function createSnapshot<TMsg>(
     });
   }
 
-  return savedActions;
+  return actionSnapshots;
 }
 
 function getActionTypeId(action: UndoAction<unknown>) {
