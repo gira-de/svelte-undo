@@ -1,5 +1,5 @@
 export { undoStack } from './undo-stack';
-export { TransactionCtrl } from './transaction';
+export { transactionCtrl } from './transaction';
 export { InitAction } from './action/action-init';
 export { GroupAction } from './action/action-group';
 export { SetAction } from './action/action-set';

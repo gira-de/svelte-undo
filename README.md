@@ -35,19 +35,19 @@ console.log($msgStore); // 'old value'
 Writing and pushing actions to the undo stack might create a lot of boilerplate code. The use of Transaction simplifies this.
 
 ```ts
-import { undoStack, TransactionCtrl } from '@gira-de/svelte-undo';
+import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
 
 // create undo stack with transaction controller
 const myUndoStack = undoStack('created');
-const transactionCtrl = new TransactionCtrl(myUndoStack, 'commit');
+const myTransactionCtrl = transactionCtrl(myUndoStack, 'commit');
 const personStore = writable({ name: 'John', age: '23' });
 
 // create a draft state for the person store
-let personDraft = transactionCtrl.getDraft(personStore);
+let personDraft = myTransactionCtrl.draft(personStore);
 personDraft['age'] = 24;
 
 // apply all draft changes
-transactionCtrl.commit('happy birthday');
+myTransactionCtrl.commit('happy birthday');
 console.log($personStore); // { name: 'John', age: '24' }
 
 // call undo() to revert the changes
@@ -60,16 +60,16 @@ Limitations: The transaction controller can only be used with Svelte stores that
 ### Save & Load undo stack
 
 ```ts
-import { undoStack, TransactionCtrl } from '@gira-de/svelte-undo';
+import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
 
 // new undo stack
 const myUndoStack = undoStack('created');
-const transactionCtrl = new TransactionCtrl(myUndoStack, 'sub action');
+const myTransactionCtrl = transactionCtrl(myUndoStack, 'sub action');
 
 // create an undo step
 const personStore = writable({ name: 'John', age: '23' });
-transactionCtrl.getDraft(personStore)['age'] = 24;
-transactionCtrl.commit('happy birthday');
+myTransactionCtrl.draft(personStore)['age'] = 24;
+myTransactionCtrl.commit('happy birthday');
 
 // create a snapshot of the current state
 const stores = {
