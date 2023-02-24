@@ -51,7 +51,7 @@ export interface UndoStack<TMsg>
   ) => void;
 }
 
-export function undoStackStore<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
+export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
   const store = writable(newUndoStackData(initActionMsg));
 
   function push(action: UndoAction<TMsg>) {

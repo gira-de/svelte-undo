@@ -1,4 +1,4 @@
-export { undoStackStore } from './undo-stack';
+export { undoStack } from './undo-stack';
 export { TransactionCtrl } from './transaction';
 export { InitAction } from './action/action-init';
 export { GroupAction } from './action/action-group';

@@ -1,4 +1,4 @@
-import { undoStackStore } from '../undo-stack';
+import { undoStack } from '../undo-stack';
 import { get, writable } from 'svelte/store';
 import { GroupAction } from './action-group';
 import { SetAction } from './action-set';
@@ -24,8 +24,8 @@ describe('MutateAction', () => {
     expect(get(storeA)).toBe('b');
   });
 
-  test('should work with undoStackStore', () => {
-    const undoStack = undoStackStore('created');
+  test('should work with undoStack', () => {
+    const undoStack1 = undoStack('created');
     const store1 = writable(0);
     const store2 = writable('a');
 
@@ -35,7 +35,7 @@ describe('MutateAction', () => {
     action.push(new SetAction('set value 2', store1, 2));
     action.push(new SetAction('set value c', store2, 'c'));
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     expect(get(store1)).toBe(2);
     expect(get(store2)).toBe('c');
 
@@ -45,15 +45,15 @@ describe('MutateAction', () => {
     action.push(new SetAction('set value e', store2, 'e'));
     action.push(new SetAction('set value 4', store1, 4));
     action.apply();
-    undoStack.push(action);
+    undoStack1.push(action);
     expect(get(store1)).toBe(4);
     expect(get(store2)).toBe('e');
 
-    undoStack.undo();
+    undoStack1.undo();
     expect(get(store1)).toBe(2);
     expect(get(store2)).toBe('c');
 
-    undoStack.redo();
+    undoStack1.redo();
     expect(get(store1)).toBe(4);
     expect(get(store2)).toBe('e');
   });

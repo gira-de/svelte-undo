@@ -1,11 +1,11 @@
-import { undoStackStore } from './undo-stack';
+import { undoStack } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { TransactionCtrl } from './transaction';
 
 describe('transactionCtrl', () => {
   test('should return current draft', () => {
-    const undoStack = undoStackStore('created');
-    const transactionCtrl = new TransactionCtrl(undoStack, 'commit');
+    const undoStack1 = undoStack('created');
+    const transactionCtrl = new TransactionCtrl(undoStack1, 'commit');
     const store1 = writable<Record<string, unknown>>({});
 
     let draft1 = transactionCtrl.getDraft(store1);
@@ -16,8 +16,8 @@ describe('transactionCtrl', () => {
   });
 
   test('should commit store value', () => {
-    const undoStack = undoStackStore('created');
-    const transactionCtrl = new TransactionCtrl(undoStack, 'commit');
+    const undoStack1 = undoStack('created');
+    const transactionCtrl = new TransactionCtrl(undoStack1, 'commit');
     const store1 = writable<Record<string, unknown>>({});
 
     const draft1 = transactionCtrl.getDraft(store1);
@@ -26,12 +26,12 @@ describe('transactionCtrl', () => {
 
     transactionCtrl.commit('commit');
     expect(get(store1)).toEqual({ a: 1 });
-    expect(get(undoStack).canUndo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(true);
   });
 
   test('should commit multiple store values', () => {
-    const undoStack = undoStackStore('created');
-    const transactionCtrl = new TransactionCtrl(undoStack, 'commit');
+    const undoStack1 = undoStack('created');
+    const transactionCtrl = new TransactionCtrl(undoStack1, 'commit');
     const store1 = writable<Record<string, unknown>>({});
     const store2 = writable<string[]>([]);
 
@@ -46,12 +46,12 @@ describe('transactionCtrl', () => {
     transactionCtrl.commit('commit');
     expect(get(store1)).toEqual({ a: 1 });
     expect(get(store2)).toEqual(['x']);
-    expect(get(undoStack).canUndo).toBe(true);
+    expect(get(undoStack1).canUndo).toBe(true);
   });
 
   test('should rollback store values', () => {
-    const undoStack = undoStackStore('created');
-    const transactionCtrl = new TransactionCtrl(undoStack, 'commit');
+    const undoStack1 = undoStack('created');
+    const transactionCtrl = new TransactionCtrl(undoStack1, 'commit');
     const store1 = writable<Record<string, unknown>>({});
     const store2 = writable<string[]>([]);
 
@@ -64,11 +64,11 @@ describe('transactionCtrl', () => {
     transactionCtrl.rollback();
     expect(get(store1)).toEqual({});
     expect(get(store2)).toEqual([]);
-    expect(get(undoStack).canUndo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(false);
 
     transactionCtrl.commit('commit');
     expect(get(store1)).toEqual({});
     expect(get(store2)).toEqual([]);
-    expect(get(undoStack).canUndo).toBe(false);
+    expect(get(undoStack1).canUndo).toBe(false);
   });
 });
