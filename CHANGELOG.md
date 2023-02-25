@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 0.0.3
+
+### Patch Changes
+
+- breaking interface changes in actions, undoStack and transactionCtrl
+
 ## 0.0.2
 
 ### Patch Changes
