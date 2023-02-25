@@ -10,20 +10,21 @@ import {
 
 type UndoStackData<TMsg> = {
   actions: UndoAction<TMsg>[];
+  selectedAction: UndoAction<TMsg>;
   canRedo: boolean;
   canUndo: boolean;
   index: number;
-  seqNbr: number;
   ticker: number;
 };
 
 function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
+  const selectedAction = new InitAction(initActionMsg);
   return {
-    actions: [new InitAction(initActionMsg)],
+    actions: [selectedAction],
+    selectedAction,
     canRedo: false,
     canUndo: false,
     index: 0,
-    seqNbr: 0,
     ticker: 0,
   };
 }
@@ -63,7 +64,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.index = undoStack.actions.length - 1;
       undoStack.canUndo = undoStack.actions.length > 0;
       undoStack.canRedo = false;
-      undoStack.seqNbr = action.seqNbr;
+      undoStack.selectedAction = action;
       return undoStack;
     });
   }
@@ -78,7 +79,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.index--;
       undoStack.canUndo = undoStack.index > 0;
       undoStack.canRedo = true;
-      undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
+      undoStack.selectedAction = undoStack.actions[undoStack.index];
       undoStack.ticker++;
       return undoStack;
     });
@@ -94,7 +95,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.actions[undoStack.index].apply();
       undoStack.canUndo = true;
       undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
-      undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
+      undoStack.selectedAction = undoStack.actions[undoStack.index];
       undoStack.ticker++;
       return undoStack;
     });
@@ -122,7 +123,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
 
       undoStack.canUndo = undoStack.index > 0;
       undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
-      undoStack.seqNbr = undoStack.actions[undoStack.index].seqNbr;
+      undoStack.selectedAction = undoStack.actions[undoStack.index];
       undoStack.ticker++;
       return undoStack;
     });
@@ -155,11 +156,11 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
 
     store.set({
       actions,
-      ticker,
-      index: undoStackSnapshot.index,
-      seqNbr: actions[undoStackSnapshot.index].seqNbr,
+      selectedAction: actions[undoStackSnapshot.index],
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
       canUndo: undoStackSnapshot.index > 0,
+      ticker,
+      index: undoStackSnapshot.index,
     });
   }
 

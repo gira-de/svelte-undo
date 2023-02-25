@@ -263,7 +263,7 @@ describe('clear', () => {
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(false);
     expect(get(undoStack1).ticker).toBe(0);
-    expect(get(undoStack1).seqNbr).toBe(0);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
   });
 });
 
