@@ -16,7 +16,7 @@ const myUndoStack = undoStack('first stack message');
 const msgStore = writable('old value');
 
 // create a new action to update the store value
-const action = new SetAction('set new value', msgStore, 'new value');
+const action = new SetAction(msgStore, 'new value', 'set new value');
 
 // apply the action
 action.apply();
@@ -93,4 +93,4 @@ myUndoStack.loadSnapshot(undoStackSnapshot, stores);
 
 ## Known issues
 
-- Working with arrays (push/remove items) might create a very large undo stack entries
+- Working with arrays (push/remove items) might create very large undo stack entries
