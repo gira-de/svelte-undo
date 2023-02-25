@@ -7,10 +7,18 @@ import { MutateAction } from './action/action-mutate';
 import { GroupAction } from './action/action-group';
 import type { ActionStack } from './undo-stack';
 
-export function transactionCtrl<TMsg>(actionStack: ActionStack<TMsg>) {
+export interface TransactionCtrl<TMsg> {
+  draft<TData extends Objectish>(store: Writable<TData>): TData;
+  commit(msg: TMsg): void;
+  rollback(): void;
+}
+
+export function transactionCtrl<TMsg>(
+  actionStack: ActionStack<TMsg>,
+): TransactionCtrl<TMsg> {
   const draftValues: Map<Writable<Objectish>, Objectish> = new Map();
 
-  function draft<TData extends Objectish>(store: Writable<TData>): TData {
+  function draft<TData extends Objectish>(store: Writable<TData>) {
     let draftValue = draftValues.get(store);
     if (draftValue === undefined) {
       const storeValue = get(store);

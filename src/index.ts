@@ -7,3 +7,4 @@ export { MutateAction } from './action/action-mutate';
 export type { Immutable } from 'immer';
 export type { Objectish } from 'immer/dist/internal';
 export type { UndoStack, UndoStackSnapshot } from './undo-stack';
+export type { TransactionCtrl } from './transaction';
