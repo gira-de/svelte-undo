@@ -2,7 +2,7 @@ import { UndoAction } from './action';
 
 export class InitAction<TMsg> extends UndoAction<TMsg> {
   constructor(msg: TMsg) {
-    super(msg, undefined, undefined);
+    super(undefined, undefined, msg);
   }
 
   apply() {

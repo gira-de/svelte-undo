@@ -42,9 +42,9 @@ export function transactionCtrl<TMsg>(actionStack: ActionStack<TMsg>) {
     if (storeUpdates.length === 1) {
       const storeUpdate = storeUpdates[0];
       const action = new MutateAction(
-        msg,
         storeUpdate.store,
         storeUpdate.patch,
+        msg,
       );
       storeUpdate.store.set(storeUpdate.newValue);
       actionStack.push(action);
@@ -52,7 +52,7 @@ export function transactionCtrl<TMsg>(actionStack: ActionStack<TMsg>) {
       const action = new GroupAction<TMsg>(msg);
       for (const storeUpdate of storeUpdates) {
         action.push(
-          new MutateAction(undefined, storeUpdate.store, storeUpdate.patch),
+          new MutateAction(storeUpdate.store, storeUpdate.patch, undefined),
         );
         storeUpdate.store.set(storeUpdate.newValue);
       }

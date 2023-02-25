@@ -8,12 +8,12 @@ describe('push', () => {
     const store = writable(1);
     expect(get(undoStack1).actions).toHaveLength(1);
 
-    let action = new SetAction('set value 2', store, 2);
+    let action = new SetAction(store, 2, 'set value 2');
     action.apply();
     undoStack1.push(action);
     expect(get(undoStack1).actions).toHaveLength(2);
 
-    action = new SetAction('set value 3', store, 3);
+    action = new SetAction(store, 3, 'set value 3');
     action.apply();
     undoStack1.push(action);
     expect(get(undoStack1).actions).toHaveLength(3);
@@ -25,7 +25,7 @@ describe('undo', () => {
     const undoStack1 = undoStack('created');
     const store = writable('old value');
 
-    const action = new SetAction('set new value', store, 'new value');
+    const action = new SetAction(store, 'new value', 'set new value');
     action.apply();
     undoStack1.push(action);
     expect(get(store)).toBe('new value');
@@ -48,7 +48,7 @@ describe('redo', () => {
     const undoStack1 = undoStack('created');
     const store = writable('old value');
 
-    const action = new SetAction('set new value', store, 'new value');
+    const action = new SetAction(store, 'new value', 'set new value');
     action.apply();
     undoStack1.push(action);
     undoStack1.undo();
@@ -74,24 +74,24 @@ describe('goto', () => {
 
     const store = writable(0);
     const s0 = getSeqNbr();
-    let action = new SetAction('set value 1', store, 1);
+    let action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
-    action = new SetAction('set value 2', store, 2);
+    action = new SetAction(store, 2, 'set value 2');
     action.apply();
     undoStack1.push(action);
     const s2 = getSeqNbr();
-    action = new SetAction('set value 3', store, 3);
+    action = new SetAction(store, 3, 'set value 3');
     action.apply();
     undoStack1.push(action);
-    action = new SetAction('set value 4', store, 4);
+    action = new SetAction(store, 4, 'set value 4');
     action.apply();
     undoStack1.push(action);
-    action = new SetAction('set value 5', store, 5);
+    action = new SetAction(store, 5, 'set value 5');
     action.apply();
     undoStack1.push(action);
     const s5 = getSeqNbr();
-    action = new SetAction('set value 6', store, 6);
+    action = new SetAction(store, 6, 'set value 6');
     action.apply();
     undoStack1.push(action);
     const s6 = getSeqNbr();
@@ -131,14 +131,14 @@ describe('canUndo & canRedo', () => {
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(false);
 
-    let action = new SetAction('set value 1', store, 1);
+    let action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
     // [0, <1>]
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
 
-    action = new SetAction('set value 2', store, 2);
+    action = new SetAction(store, 2, 'set value 2');
     action.apply();
     undoStack1.push(action);
     // [0, 1, <2>]
@@ -190,7 +190,7 @@ describe('subscribe', () => {
     const onChanged = vitest.fn();
     undoStack1.subscribe(onChanged);
 
-    const action = new SetAction('set value 1', store, 1);
+    const action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
     expect(onChanged).toHaveBeenCalledTimes(2);
@@ -201,7 +201,7 @@ describe('subscribe', () => {
     const undoStack1 = undoStack('created');
     const store = writable(0);
 
-    const action = new SetAction('set value 1', store, 1);
+    const action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
 
@@ -216,7 +216,7 @@ describe('subscribe', () => {
     const undoStack1 = undoStack('created');
     const store = writable(0);
 
-    const action = new SetAction('set value 1', store, 1);
+    const action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
     undoStack1.undo();
@@ -232,7 +232,7 @@ describe('subscribe', () => {
     const undoStack1 = undoStack('created');
     const store = writable(0);
 
-    const action = new SetAction('set value 1', store, 1);
+    const action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
 
@@ -252,7 +252,7 @@ describe('clear', () => {
   test('should all actions from stack and create a new init action', () => {
     const undoStack1 = undoStack('created');
 
-    const action = new SetAction('set value 1', writable(0), 1);
+    const action = new SetAction(writable(0), 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
 
@@ -296,7 +296,7 @@ describe('createSnapshot', () => {
   test('should export undo stack state', () => {
     const undoStack1 = undoStack('created');
     const fooStore = writable(0);
-    const action = new SetAction('set value 1', fooStore, 1);
+    const action = new SetAction(fooStore, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
 

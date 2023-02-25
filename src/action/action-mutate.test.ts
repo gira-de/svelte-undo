@@ -18,7 +18,7 @@ describe('MutateAction', () => {
         },
       );
     });
-    const action = new MutateAction('MutateAction', store, patch);
+    const action = new MutateAction(store, patch, 'MutateAction');
 
     expect(get(store)).toStrictEqual({ value: 1 });
 
@@ -37,7 +37,7 @@ describe('MutateAction', () => {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
     };
 
-    const action = new MutateAction(msg, store, data);
+    const action = new MutateAction(store, data, msg);
     expect(action?.msg).toEqual('MutateAction');
 
     action?.apply();

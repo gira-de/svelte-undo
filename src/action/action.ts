@@ -4,7 +4,7 @@ export abstract class UndoAction<TMsg, TStore = unknown, TPatch = unknown> {
   protected _patch: TPatch;
   seqNbr = 0;
 
-  constructor(msg: TMsg, store: TStore, patch: TPatch) {
+  constructor(store: TStore, patch: TPatch, msg: TMsg) {
     this.msg = msg;
     this.store = store;
     this._patch = patch;

@@ -37,8 +37,11 @@ export function loadActionsSnapshot<TMsg>(
     if (actionSnapshot.type === 'group') {
       const actionsSnapshot =
         actionSnapshot.data as UndoActionSnapshot<undefined>[];
-      const undoActions = actionsSnapshot.map((a) => loadActionSnapshot(a));
-      return new GroupAction(actionSnapshot.msg, undoActions);
+      const groupAction = new GroupAction(actionSnapshot.msg);
+      for (const actionSnapshot of actionsSnapshot) {
+        groupAction.push(loadActionSnapshot(actionSnapshot));
+      }
+      return groupAction;
     } else if (actionSnapshot.type === 'init') {
       return new InitAction(actionSnapshot.msg);
     }
@@ -49,15 +52,15 @@ export function loadActionsSnapshot<TMsg>(
 
     if (actionSnapshot.type === 'set') {
       return new SetAction(
-        actionSnapshot.msg,
         stores[actionSnapshot.storeId] as Writable<unknown>,
         actionSnapshot.data,
+        actionSnapshot.msg,
       );
     } else if (actionSnapshot.type === 'mutate') {
       return new MutateAction(
-        actionSnapshot.msg,
         stores[actionSnapshot.storeId] as Writable<Objectish>,
         actionSnapshot.data as MutateActionPatch,
+        actionSnapshot.msg,
       );
     }
 

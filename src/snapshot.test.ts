@@ -14,7 +14,7 @@ const { getActionTypeId } = exportedForTesting;
 
 export class FooAction extends UndoAction<string> {
   constructor() {
-    super('Unknown Action', undefined, undefined);
+    super(undefined, undefined, 'Unknown Action');
   }
   apply() {
     // noop
@@ -28,12 +28,16 @@ describe('getActionTypeId', () => {
   test.each([
     { action: new InitAction('InitAction'), actionId: 'init' },
     { action: new GroupAction('GroupAction'), actionId: 'group' },
-    { action: new SetAction('SetAction', writable(0), 1), actionId: 'set' },
+    { action: new SetAction(writable(0), 1, 'SetAction'), actionId: 'set' },
     {
-      action: new MutateAction('MutateAction', writable({}), {
-        patches: [],
-        inversePatches: [],
-      }),
+      action: new MutateAction(
+        writable({}),
+        {
+          patches: [],
+          inversePatches: [],
+        },
+        'MutateAction',
+      ),
       actionId: 'mutate',
     },
   ])('should return action id $actionId', ({ action, actionId }) => {
@@ -167,7 +171,7 @@ describe('loadActionsSnapshot', () => {
     ).toThrow();
   });
 
-  test('should throw if action type id is unkown', () => {
+  test('should throw if action type id is unknown', () => {
     const fooActionSnapshot = {
       type: 'foo',
       storeId: 'store1',
@@ -193,7 +197,7 @@ describe('createSnapshotFromActions', () => {
   test('should create a snapshot of a group-action', () => {
     const groupAction = new GroupAction('GroupAction');
     const store1 = writable(0);
-    groupAction.push(new SetAction(undefined, store1, 1));
+    groupAction.push(new SetAction(store1, 1, undefined));
 
     const actionsSnapshot = createSnapshotFromActions([groupAction], {
       store1,
@@ -211,7 +215,7 @@ describe('createSnapshotFromActions', () => {
   test('should create a snapshot of a set-action', () => {
     const store1 = writable(0);
 
-    const setAction = new SetAction('SetAction', store1, 1);
+    const setAction = new SetAction(store1, 1, 'SetAction');
     const actionsSnapshot = createSnapshotFromActions([setAction], { store1 });
 
     expect(actionsSnapshot).toEqual([
@@ -230,7 +234,7 @@ describe('createSnapshotFromActions', () => {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
       inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
     };
-    const mutateAction = new MutateAction('MutateAction', store1, patch);
+    const mutateAction = new MutateAction(store1, patch, 'MutateAction');
     const actionsSnapshot = createSnapshotFromActions([mutateAction], {
       store1,
     });
@@ -247,10 +251,10 @@ describe('createSnapshotFromActions', () => {
 
   test('should create a snapshot of multiple actions', () => {
     const store1 = writable(0);
-    const setAction = new SetAction('SetAction', store1, 1);
+    const setAction = new SetAction(store1, 1, 'SetAction');
 
     const store2 = writable('hello');
-    const setAction2 = new SetAction('SetAction', store2, 'world');
+    const setAction2 = new SetAction(store2, 'world', 'SetAction');
 
     const actionsSnapshot = createSnapshotFromActions([setAction, setAction2], {
       store1,
@@ -275,7 +279,7 @@ describe('createSnapshotFromActions', () => {
 
   test('should throw if store id is missing', () => {
     const store1 = writable(0);
-    const setAction = new SetAction('SetAction', store1, 1);
+    const setAction = new SetAction(store1, 1, 'SetAction');
 
     expect(() => createSnapshotFromActions([setAction], {})).toThrow();
   });

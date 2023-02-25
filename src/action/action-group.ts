@@ -5,8 +5,8 @@ export class GroupAction<TMsg> extends UndoAction<
   undefined,
   UndoAction<undefined>[]
 > {
-  constructor(msg: TMsg, actions: UndoAction<undefined>[] = []) {
-    super(msg, undefined, actions);
+  constructor(msg: TMsg) {
+    super(undefined, [], msg);
   }
 
   push(action: UndoAction<undefined>) {

@@ -5,7 +5,7 @@ describe('SetAction', () => {
   test('should apply and revert values', () => {
     const store = writable(0);
 
-    const action = new SetAction('setAction', store, 1);
+    const action = new SetAction(store, 1, 'setAction');
     action.apply();
     expect(get(store)).toBe(1);
 
