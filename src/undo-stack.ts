@@ -18,11 +18,37 @@ type UndoStackData<TMsg> = {
 };
 
 type ReadableUndoStackData<TMsg> = {
+  /**
+   * list of all actions that are currently on the undo stack
+   */
   readonly actions: ReadonlyArray<ReadableUndoAction<TMsg>>;
+
+  /**
+   * the active undo step those state has been applied
+   */
   readonly selectedAction: ReadableUndoAction<TMsg>;
+
+  /**
+   * true if the selected action is not on the top of the stack.
+   * Is false after pushing an action to the stack.
+   */
   readonly canRedo: boolean;
+
+  /**
+   * true if the selected action is not the first action on the stack.
+   * Is false after the stack has been created.
+   */
   readonly canUndo: boolean;
+
+  /**
+   * index is the selected action. Any value between 0 and actions.length - 1
+   */
   readonly index: number;
+
+  /**
+   * 0 after the stack has been created and gets increments with each state
+   * change, e.g. push, redo, undo, ...
+   */
   readonly ticker: number;
 };
 
@@ -44,23 +70,70 @@ export type UndoStackSnapshot<TMsg> = {
 };
 
 export interface ActionStack<TMsg> {
+  /**
+   * Removes all action above the selected actions (if their are any)
+   * and adds the specified action to the top of the stack. Selects the
+   * action. Does not call apply().
+   * @param action init, group, set or mutate action that should added to the stack
+   */
   push: (action: UndoAction<TMsg>) => void;
 }
 
 export interface UndoStack<TMsg>
   extends Readable<ReadableUndoStackData<TMsg>>,
     ActionStack<TMsg> {
+  /**
+   * Reverts the selected action and selects the previous action.
+   * Does nothing if there is no previous action.
+   */
   undo: () => void;
+
+  /**
+   * Selects the next actions and applies its state.
+   * Does nothing if their is no next action.
+   */
   redo: () => void;
-  goto: (index: number) => void;
+
+  /**
+   * Applies or reverts all actions until the action with the specified
+   * seqNbr is reached. Then the specified action is selected.
+   * Does nothing if no action with the specified seqNbr exists.
+   * @param seqNbr is the seqNbr of the action those state should be loaded
+   */
+  goto: (seqNbr: number) => void;
+
+  /**
+   * Clears the undo stack and resets all properties as if a new undo stack
+   * would have been created.
+   */
   clear: () => void;
+
+  /**
+   * Creates a snapshot of the current undo stack that can easily be serialized.
+   * @param stores object that contains unique string keys for each store that is references by the undo stack
+   * @returns snapshot object of the undo stack
+   */
   createSnapshot: (stores: Record<string, unknown>) => UndoStackSnapshot<TMsg>;
+
+  /**
+   * Loads the snapshot that has previously been created with createSnapshot().
+   * @param undoStackSnapshot
+   * @param stores
+   * @returns
+   */
   loadSnapshot: (
     undoStackSnapshot: UndoStackSnapshot<TMsg>,
     stores: Record<string, unknown>,
   ) => void;
 }
 
+/**
+ * Create a new undo stack in form of a Svelte store. The stack holds all undo
+ * steps (aka actions) and provides functions undo or redo those steps.
+ *
+ * @param initActionMsg message of the first undo stack stack entry
+ * @returns Svelte store of an undo stack
+ */
 export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
   const store = writable(newUndoStackData(initActionMsg));
 
