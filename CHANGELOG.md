@@ -1,5 +1,16 @@
 # @gira-de/svelte-undo
 
+## 1.0.0
+
+### Major Changes
+
+- first major release
+- feat: undo stack with undo/redo/goto
+- feat: undo step messages
+- feat: transactions
+- feat: snapshots
+- feat: full typescript support
+
 ## 0.0.6
 
 ### Patch Changes
