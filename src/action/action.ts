@@ -1,4 +1,11 @@
-export abstract class UndoAction<TMsg, TStore = unknown, TPatch = unknown> {
+export interface ReadableUndoAction<TMsg> {
+  readonly msg: TMsg;
+  readonly seqNbr: number;
+}
+
+export abstract class UndoAction<TMsg, TStore = unknown, TPatch = unknown>
+  implements ReadableUndoAction<TMsg>
+{
   readonly msg: TMsg;
   readonly store: TStore;
   protected _patch: TPatch;

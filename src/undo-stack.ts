@@ -1,4 +1,4 @@
-import type { UndoAction } from './action/action';
+import type { ReadableUndoAction, UndoAction } from './action/action';
 import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
 import { InitAction } from './action/action-init';
@@ -15,6 +15,15 @@ type UndoStackData<TMsg> = {
   canUndo: boolean;
   index: number;
   ticker: number;
+};
+
+type ReadableUndoStackData<TMsg> = {
+  readonly actions: ReadonlyArray<ReadableUndoAction<TMsg>>;
+  readonly selectedAction: ReadableUndoAction<TMsg>;
+  readonly canRedo: boolean;
+  readonly canUndo: boolean;
+  readonly index: number;
+  readonly ticker: number;
 };
 
 function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
@@ -39,7 +48,7 @@ export interface ActionStack<TMsg> {
 }
 
 export interface UndoStack<TMsg>
-  extends Readable<UndoStackData<TMsg>>,
+  extends Readable<ReadableUndoStackData<TMsg>>,
     ActionStack<TMsg> {
   undo: () => void;
   redo: () => void;

@@ -1,6 +1,34 @@
 import { UndoStackSnapshot, undoStack } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
+import { InitAction } from './action/action-init';
+
+describe('undoStack', () => {
+  test('props should be readonly', () => {
+    const undoStack1 = undoStack('created');
+
+    // @ts-expect-error index should be readonly
+    get(undoStack1).index = -1;
+
+    // @ts-expect-error ticker should be readonly
+    get(undoStack1).ticker = -1;
+
+    // @ts-expect-error selectedAction should be readonly
+    get(undoStack1).selectedAction = new InitAction('asdf');
+
+    // @ts-expect-error canUndo should be readonly
+    get(undoStack1).canUndo = false;
+
+    // @ts-expect-error canRedo should be readonly
+    get(undoStack1).canRedo = false;
+
+    // @ts-expect-error actions.push should be accessible
+    get(undoStack1).actions.push(new InitAction('asdf'));
+
+    // @ts-expect-error action should be readonly
+    get(undoStack1).actions[0].seqNbr = 1;
+  });
+});
 
 describe('push', () => {
   test('should add a new item to the stack', () => {
@@ -69,18 +97,16 @@ describe('redo', () => {
 describe('goto', () => {
   test('should load the specified state', () => {
     const undoStack1 = undoStack('created');
-    const getSeqNbr = () =>
-      get(undoStack1).actions[get(undoStack1).index].seqNbr;
 
     const store = writable(0);
-    const s0 = getSeqNbr();
+    const s0 = get(undoStack1).actions[0].seqNbr;
     let action = new SetAction(store, 1, 'set value 1');
     action.apply();
     undoStack1.push(action);
     action = new SetAction(store, 2, 'set value 2');
     action.apply();
     undoStack1.push(action);
-    const s2 = getSeqNbr();
+    const s2 = action.seqNbr;
     action = new SetAction(store, 3, 'set value 3');
     action.apply();
     undoStack1.push(action);
@@ -90,11 +116,11 @@ describe('goto', () => {
     action = new SetAction(store, 5, 'set value 5');
     action.apply();
     undoStack1.push(action);
-    const s5 = getSeqNbr();
+    const s5 = action.seqNbr;
     action = new SetAction(store, 6, 'set value 6');
     action.apply();
     undoStack1.push(action);
-    const s6 = getSeqNbr();
+    const s6 = action.seqNbr;
 
     // go backwards
     undoStack1.goto(s2);
