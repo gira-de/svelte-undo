@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 0.0.6
+
+### Patch Changes
+
+- order of generic types for actions shall be the same as the constructor params
+
 ## 0.0.5
 
 ### Patch Changes
