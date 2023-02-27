@@ -8,11 +8,42 @@ import { GroupAction } from './action/action-group';
 import type { ActionStack } from './undo-stack';
 
 export interface TransactionCtrl<TMsg> {
+  /**
+   * Returns the draft state for the specified store.
+   * The draft can then be edited without changing the store value.
+   * The changes will be applied to the store when commit() is called.
+   *
+   * @param store the store for which the draft state should be created
+   */
   draft<TData extends Objectish>(store: Writable<TData>): TData;
+
+  /**
+   * Applies the changes of the draft state(s) to the stores and adds
+   * a action with all these changes to the undo stack. The specified
+   * msg parameter is applied to the action.
+   *
+   * Does nothing if no draft changes exists.
+   *
+   * @param msg action message
+   */
   commit(msg: TMsg): void;
+
+  /**
+   * Discards all draft changes.
+   */
   rollback(): void;
 }
 
+/**
+ * Creates a new transaction controller for the specified undo stack.
+ * The transaction controller can be used to create undo stack entries
+ * by committing draft objects.
+ *
+ * Only one transaction controller per undo stack is allowed.
+ *
+ * @param actionStack The undo stack where the history entries shall be stored
+ * @returns instance of a transaction controller
+ */
 export function transactionCtrl<TMsg>(
   actionStack: ActionStack<TMsg>,
 ): TransactionCtrl<TMsg> {
