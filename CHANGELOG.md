@@ -1,5 +1,13 @@
 # @gira-de/svelte-undo
 
+## 0.0.5
+
+### Patch Changes
+
+- docs: improve readme
+- docs: add api docs
+- fix: restrict access to undo stack and action properties
+
 ## 0.0.4
 
 ### Patch Changes
