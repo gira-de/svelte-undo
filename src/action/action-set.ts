@@ -1,10 +1,10 @@
 import type { Writable } from 'svelte/store';
 import { UndoAction } from './action';
 
-export class SetAction<TMsg, TStore> extends UndoAction<
-  TMsg,
+export class SetAction<TStore, TMsg> extends UndoAction<
   Writable<TStore>,
-  TStore
+  TStore,
+  TMsg
 > {
   apply() {
     this.store.update((currValue) => {

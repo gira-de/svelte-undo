@@ -9,8 +9,8 @@ import {
 } from './snapshot';
 
 type UndoStackData<TMsg> = {
-  actions: UndoAction<TMsg>[];
-  selectedAction: UndoAction<TMsg>;
+  actions: UndoAction<unknown, unknown, TMsg>[];
+  selectedAction: UndoAction<unknown, unknown, TMsg>;
   canRedo: boolean;
   canUndo: boolean;
   index: number;
@@ -76,7 +76,7 @@ export interface ActionStack<TMsg> {
    * action. Does not call apply().
    * @param action init, group, set or mutate action that should added to the stack
    */
-  push: (action: UndoAction<TMsg>) => void;
+  push: (action: UndoAction<unknown, unknown, TMsg>) => void;
 }
 
 export interface UndoStack<TMsg>
@@ -137,7 +137,7 @@ export interface UndoStack<TMsg>
 export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
   const store = writable(newUndoStackData(initActionMsg));
 
-  function push(action: UndoAction<TMsg>) {
+  function push(action: UndoAction<unknown, unknown, TMsg>) {
     store.update((undoStack) => {
       undoStack.ticker++;
       action.seqNbr = undoStack.ticker;

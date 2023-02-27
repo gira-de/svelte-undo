@@ -24,7 +24,7 @@ export function loadActionsSnapshot<TMsg>(
   actionsSnapshot: UndoActionSnapshot<TMsg>[],
   stores: Record<string, unknown>,
 ) {
-  const stackedActions: UndoAction<TMsg>[] = [];
+  const stackedActions: UndoAction<unknown, unknown, TMsg>[] = [];
 
   for (const actionSnapshot of actionsSnapshot) {
     const action = loadActionSnapshot(actionSnapshot);
@@ -33,7 +33,7 @@ export function loadActionsSnapshot<TMsg>(
 
   function loadActionSnapshot<TMsg>(
     actionSnapshot: UndoActionSnapshot<TMsg>,
-  ): UndoAction<TMsg> {
+  ): UndoAction<unknown, unknown, TMsg> {
     if (actionSnapshot.type === 'group') {
       const actionsSnapshot =
         actionSnapshot.data as UndoActionSnapshot<undefined>[];
@@ -71,7 +71,7 @@ export function loadActionsSnapshot<TMsg>(
 }
 
 export function createSnapshotFromActions<TMsg>(
-  actions: UndoAction<TMsg>[],
+  actions: UndoAction<unknown, unknown, TMsg>[],
   stores: Record<string, unknown>,
 ) {
   const storeIds = new Map<unknown, string>();
@@ -83,7 +83,7 @@ export function createSnapshotFromActions<TMsg>(
 }
 
 function createSnapshot<TMsg>(
-  actions: UndoAction<TMsg>[],
+  actions: UndoAction<unknown, unknown, TMsg>[],
   storeIds: Map<unknown, string>,
 ) {
   const actionSnapshots: UndoActionSnapshot<TMsg>[] = [];
@@ -91,7 +91,10 @@ function createSnapshot<TMsg>(
   for (const action of actions) {
     let data: unknown = undefined;
     if (Array.isArray(action.patch)) {
-      data = createSnapshot(action.patch as UndoAction<TMsg>[], storeIds);
+      data = createSnapshot(
+        action.patch as UndoAction<unknown, unknown, TMsg>[],
+        storeIds,
+      );
     } else {
       data = action.patch;
     }
@@ -115,7 +118,7 @@ function createSnapshot<TMsg>(
   return actionSnapshots;
 }
 
-function getActionTypeId(action: UndoAction<unknown>) {
+function getActionTypeId(action: UndoAction<unknown, unknown, unknown>) {
   return actionIds[action.constructor.name];
 }
 

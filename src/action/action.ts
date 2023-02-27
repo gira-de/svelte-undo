@@ -3,18 +3,18 @@ export interface ReadableUndoAction<TMsg> {
   readonly seqNbr: number;
 }
 
-export abstract class UndoAction<TMsg, TStore = unknown, TPatch = unknown>
+export abstract class UndoAction<TStore, TPatch, TMsg>
   implements ReadableUndoAction<TMsg>
 {
-  readonly msg: TMsg;
   readonly store: TStore;
   protected _patch: TPatch;
+  readonly msg: TMsg;
   seqNbr = 0;
 
   constructor(store: TStore, patch: TPatch, msg: TMsg) {
-    this.msg = msg;
     this.store = store;
     this._patch = patch;
+    this.msg = msg;
   }
 
   get patch() {

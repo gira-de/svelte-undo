@@ -12,10 +12,10 @@ export type MutateActionPatch = {
   inversePatches: Patch[];
 };
 
-export class MutateAction<TMsg, TValue extends Objectish> extends UndoAction<
-  TMsg,
+export class MutateAction<TValue extends Objectish, TMsg> extends UndoAction<
   Writable<TValue>,
-  MutateActionPatch
+  MutateActionPatch,
+  TMsg
 > {
   apply() {
     this.store.update((value) => applyPatches(value, this.patch.patches));

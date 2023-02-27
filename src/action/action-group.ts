@@ -1,15 +1,15 @@
 import { UndoAction } from './action';
 
 export class GroupAction<TMsg> extends UndoAction<
-  TMsg,
   undefined,
-  UndoAction<undefined>[]
+  UndoAction<unknown, unknown, undefined>[],
+  TMsg
 > {
   constructor(msg: TMsg) {
     super(undefined, [], msg);
   }
 
-  push(action: UndoAction<undefined>) {
+  push(action: UndoAction<unknown, unknown, undefined>) {
     this.patch.push(action);
   }
 

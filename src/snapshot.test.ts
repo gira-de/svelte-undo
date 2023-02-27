@@ -12,7 +12,7 @@ import {
 
 const { getActionTypeId } = exportedForTesting;
 
-export class FooAction extends UndoAction<string> {
+export class FooAction extends UndoAction<unknown, unknown, string> {
   constructor() {
     super(undefined, undefined, 'Unknown Action');
   }
