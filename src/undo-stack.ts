@@ -1,7 +1,7 @@
 import type { ReadableUndoAction, UndoAction } from './action/action';
 import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
-import { InitAction } from './action/action-init';
+import { BarrierAction, ErasedAction, InitAction } from './action/action-init';
 import {
   loadActionsSnapshot,
   createSnapshotFromActions,
@@ -98,9 +98,21 @@ export interface UndoStack<TMsg>
    * Applies or reverts all actions until the action with the specified
    * seqNbr is reached. Then the specified action is selected.
    * Does nothing if no action with the specified seqNbr exists.
-   * @param seqNbr is the seqNbr of the action those state should be loaded
+   * @param seqNbr is the sequence number of the action those state should be
+   * loaded.
    */
   goto: (seqNbr: number) => void;
+
+  /**
+   * Erases all actions beginning with action of the specified seqNbr. Erased
+   * actions no longer can be used for undo/redo but they are still listed on
+   * the undo stack. This reduces the size of the stack while keeping the
+   * history of all actions.
+   * Stops erasing when a barrier step is reached.
+   * @param seqNbr the sequence number, from which all older actions should be
+   * erased. If undefined, starts erasing from the top of the stack.
+   */
+  erase: (seqNbr?: number) => void;
 
   /**
    * Clears the undo stack and resets all properties as if a new undo stack
@@ -144,24 +156,29 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       const deleteCount = undoStack.actions.length - undoStack.index - 1;
       undoStack.actions.splice(undoStack.index + 1, deleteCount, action);
       undoStack.index = undoStack.actions.length - 1;
-      undoStack.canUndo = undoStack.actions.length > 0;
-      undoStack.canRedo = false;
       undoStack.selectedAction = action;
+      undoStack.canUndo = !(action instanceof BarrierAction);
+      undoStack.canRedo = false;
       return undoStack;
     });
   }
 
   function undo() {
     store.update((undoStack) => {
-      if (undoStack.index <= 0) {
+      if (
+        undoStack.index <= 0 ||
+        undoStack.selectedAction instanceof BarrierAction
+      ) {
         return undoStack;
       }
 
       undoStack.actions[undoStack.index].revert();
       undoStack.index--;
-      undoStack.canUndo = undoStack.index > 0;
-      undoStack.canRedo = true;
       undoStack.selectedAction = undoStack.actions[undoStack.index];
+      undoStack.canUndo =
+        undoStack.index > 0 &&
+        !(undoStack.selectedAction instanceof BarrierAction);
+      undoStack.canRedo = true;
       undoStack.ticker++;
       return undoStack;
     });
@@ -169,14 +186,19 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
 
   function redo() {
     store.update((undoStack) => {
-      if (undoStack.index >= undoStack.actions.length - 1) {
+      if (
+        undoStack.index >= undoStack.actions.length - 1 ||
+        undoStack.actions[undoStack.index + 1] instanceof BarrierAction
+      ) {
         return undoStack;
       }
 
       undoStack.index++;
       undoStack.actions[undoStack.index].apply();
       undoStack.canUndo = true;
-      undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
+      undoStack.canRedo =
+        undoStack.index < undoStack.actions.length - 1 &&
+        !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
       undoStack.selectedAction = undoStack.actions[undoStack.index];
       undoStack.ticker++;
       return undoStack;
@@ -192,20 +214,69 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
         return undoStack;
       }
 
-      // -1 = undo (revert-action), 1 = redo (apply-action)
-      const step = Math.sign(targetIndex - undoStack.index);
+      if (targetIndex === undoStack.index) {
+        return undoStack;
+      }
 
-      for (; undoStack.index != targetIndex; undoStack.index += step) {
-        if (step < 0) {
-          undoStack.actions[undoStack.index].revert();
-        } else {
-          undoStack.actions[undoStack.index + 1].apply();
+      for (let i = undoStack.index; targetIndex < i; i--) {
+        if (undoStack.actions[i] instanceof BarrierAction) {
+          return undoStack;
         }
       }
 
-      undoStack.canUndo = undoStack.index > 0;
-      undoStack.canRedo = undoStack.index < undoStack.actions.length - 1;
+      for (let i = undoStack.index + 1; targetIndex >= i; i++) {
+        if (undoStack.actions[i] instanceof BarrierAction) {
+          return undoStack;
+        }
+      }
+
+      for (; targetIndex < undoStack.index; undoStack.index--) {
+        undoStack.actions[undoStack.index].revert();
+      }
+
+      for (; targetIndex > undoStack.index; undoStack.index++) {
+        undoStack.actions[undoStack.index + 1].apply();
+      }
+
       undoStack.selectedAction = undoStack.actions[undoStack.index];
+      undoStack.canUndo =
+        undoStack.index > 0 &&
+        !(undoStack.selectedAction instanceof BarrierAction);
+      undoStack.canRedo =
+        undoStack.index < undoStack.actions.length - 1 &&
+        !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
+      undoStack.ticker++;
+      return undoStack;
+    });
+  }
+
+  function erase(seqNbr?: number) {
+    store.update((undoStack) => {
+      // get top start index
+      const startIndex =
+        seqNbr === undefined
+          ? undoStack.actions.length - 1
+          : undoStack.actions.findIndex((a) => a.seqNbr === seqNbr);
+      if (startIndex < 0) {
+        return undoStack;
+      }
+
+      // cancel if unapplied action should be erased
+      if (undoStack.index < startIndex) {
+        return undoStack;
+      }
+
+      // erase actions
+      for (let i = startIndex; i > 0; i--) {
+        const action = undoStack.actions[i];
+        if (action instanceof BarrierAction) {
+          break;
+        }
+
+        undoStack.actions[i] = new ErasedAction(action.msg);
+      }
+
+      undoStack.canUndo = undoStack.index > startIndex;
       undoStack.ticker++;
       return undoStack;
     });
@@ -251,6 +322,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     undo,
     redo,
     goto,
+    erase,
     clear,
     createSnapshot,
     loadSnapshot,

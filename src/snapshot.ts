@@ -2,7 +2,7 @@ import type { Objectish } from 'immer/dist/internal';
 import type { Writable } from 'svelte/store';
 import type { UndoAction } from './action/action';
 import { GroupAction } from './action/action-group';
-import { InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-init';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
 
@@ -15,6 +15,7 @@ export type UndoActionSnapshot<TMsg> = {
 
 const actionIds = {
   [InitAction.name]: 'init',
+  [ErasedAction.name]: 'erased',
   [GroupAction.name]: 'group',
   [SetAction.name]: 'set',
   [MutateAction.name]: 'mutate',
@@ -44,6 +45,8 @@ export function loadActionsSnapshot<TMsg>(
       return groupAction;
     } else if (actionSnapshot.type === 'init') {
       return new InitAction(actionSnapshot.msg);
+    } else if (actionSnapshot.type === 'erased') {
+      return new ErasedAction(actionSnapshot.msg);
     }
 
     if (!actionSnapshot.storeId) {
