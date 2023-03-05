@@ -1,7 +1,7 @@
 import { UndoStackSnapshot, undoStack } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
-import { ErasedAction, InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-barrier';
 
 describe('undoStack', () => {
   test('props should be readonly', () => {

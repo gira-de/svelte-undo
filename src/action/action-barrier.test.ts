@@ -1,4 +1,4 @@
-import { ErasedAction, InitAction } from './action-init';
+import { ErasedAction, InitAction } from './action-barrier';
 
 describe('InitAction', () => {
   test('should initialize action correctly', () => {
