@@ -7,12 +7,12 @@ describe('ReadableUndoAction', () => {
     const readableAction: ReadableUndoAction<string> = action;
 
     // @ts-expect-error apply() should be undefined
-    readableAction.apply();
-    action.apply();
+    expect(readableAction.apply).toThrow();
+    expect(action.apply).toThrow();
 
     // @ts-expect-error revert() should be undefined
-    readableAction.revert();
-    action.revert();
+    expect(readableAction.revert).toThrow();
+    expect(action.revert).toThrow();
 
     // @ts-expect-error store should be undefined
     readableAction.store;

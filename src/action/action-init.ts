@@ -1,15 +1,23 @@
 import { UndoAction } from './action';
 
-export class InitAction<TMsg> extends UndoAction<undefined, undefined, TMsg> {
+export abstract class BarrierAction<TMsg> extends UndoAction<
+  undefined,
+  undefined,
+  TMsg
+> {
   constructor(msg: TMsg) {
     super(undefined, undefined, msg);
   }
 
   apply() {
-    // noop
+    throw new Error('barrier action can not be applied');
   }
 
   revert() {
-    // noop
+    throw new Error('barrier action can not be reverted');
   }
 }
+
+export class InitAction<TMsg> extends BarrierAction<TMsg> {}
+
+export class ErasedAction<TMsg> extends BarrierAction<TMsg> {}
