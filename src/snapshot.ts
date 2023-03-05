@@ -2,7 +2,7 @@ import type { Objectish } from 'immer/dist/internal';
 import type { Writable } from 'svelte/store';
 import type { UndoAction } from './action/action';
 import { GroupAction } from './action/action-group';
-import { ErasedAction, InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-barrier';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
 

@@ -1,7 +1,11 @@
 import type { ReadableUndoAction, UndoAction } from './action/action';
 import { get, writable } from 'svelte/store';
 import type { Readable } from 'svelte/store';
-import { BarrierAction, ErasedAction, InitAction } from './action/action-init';
+import {
+  BarrierAction,
+  ErasedAction,
+  InitAction,
+} from './action/action-barrier';
 import {
   loadActionsSnapshot,
   createSnapshotFromActions,
