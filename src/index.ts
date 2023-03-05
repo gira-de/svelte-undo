@@ -1,6 +1,6 @@
 export { undoStack } from './undo-stack';
 export { transactionCtrl } from './transaction';
-export { InitAction } from './action/action-barrier';
+export { ErasedAction, InitAction } from './action/action-barrier';
 export { GroupAction } from './action/action-group';
 export { SetAction } from './action/action-set';
 export { MutateAction } from './action/action-mutate';
