@@ -1,7 +1,7 @@
 import { UndoStackSnapshot, undoStack } from './undo-stack';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
-import { InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-init';
 
 describe('undoStack', () => {
   test('props should be readonly', () => {
@@ -46,6 +46,13 @@ describe('push', () => {
     undoStack1.push(action);
     expect(get(undoStack1).actions).toHaveLength(3);
   });
+
+  test('barrier action should set canUndo to false', () => {
+    const undoStack1 = undoStack('created');
+
+    undoStack1.push(new ErasedAction('barrier'));
+    expect(get(undoStack1).canUndo).toBe(false);
+  });
 });
 
 describe('undo', () => {
@@ -62,12 +69,37 @@ describe('undo', () => {
     expect(get(store)).toBe('old value');
   });
 
+  test('should set canUndo to false if the new selected action is a barrier', () => {
+    const undoStack1 = undoStack('created');
+    const store = writable(1);
+
+    const barrierAction = new ErasedAction('barrier');
+    undoStack1.push(barrierAction);
+
+    const setAction = new SetAction(store, 2, 'set 2');
+    setAction.apply();
+    undoStack1.push(setAction);
+
+    undoStack1.undo();
+    expect(get(undoStack1).canUndo).toBe(false);
+  });
+
   test('should do nothing if their is no previous state', () => {
     const undoStack1 = undoStack('created');
     const store = writable('old value');
 
     undoStack1.undo();
     expect(get(store)).toBe('old value');
+  });
+
+  test('should do nothing if a barrier action is selected', () => {
+    const undoStack1 = undoStack('created');
+
+    const action = new ErasedAction('barrier');
+    undoStack1.push(action);
+
+    undoStack1.undo();
+    expect(get(undoStack1).selectedAction).toBe(action);
   });
 });
 
@@ -91,6 +123,46 @@ describe('redo', () => {
 
     undoStack1.redo();
     expect(get(store)).toBe('old value');
+  });
+
+  test('should do nothing if the next selected action would be a barrier', () => {
+    const undoStack1 = undoStack('created');
+    const store = writable(2);
+    undoStack1.loadSnapshot(
+      {
+        index: 1,
+        actions: [
+          { type: 'init', msg: 'init' },
+          { type: 'set', msg: 'set 2', storeId: 'store', data: 1 },
+          { type: 'erased', msg: 'erased' },
+        ],
+      },
+      { store },
+    );
+
+    undoStack1.redo();
+    expect(get(undoStack1).index).toBe(1);
+  });
+
+  test('should set canRedo to false if the next action is a barrier', () => {
+    const undoStack1 = undoStack('created');
+    const store = writable(1);
+    undoStack1.loadSnapshot(
+      {
+        index: 0,
+        actions: [
+          { type: 'init', msg: 'init' },
+          { type: 'set', msg: 'set 2', storeId: 'store', data: 2 },
+          { type: 'erased', msg: 'erased' },
+        ],
+      },
+      { store },
+    );
+
+    undoStack1.redo();
+    expect(get(undoStack1).index).toBe(1);
+    expect(get(store)).toBe(2);
+    expect(get(undoStack1).canRedo).toBe(false);
   });
 });
 
@@ -139,12 +211,62 @@ describe('goto', () => {
     expect(get(store)).toBe(6);
   });
 
-  test('should do nothing if specified state does not exist', () => {
+  test('should do nothing if specified seq number does not exist', () => {
     const undoStack1 = undoStack('created');
     const store = writable('old value');
 
     undoStack1.goto(999);
     expect(get(store)).toBe('old value');
+  });
+
+  test('should do nothing if specified seq number is already selected', () => {
+    const undoStack1 = undoStack('created');
+    const store = writable(0);
+    const action = new SetAction(store, 1, 'set value 1');
+    action.apply();
+    undoStack1.push(action);
+
+    undoStack1.goto(action.seqNbr);
+
+    expect(get(undoStack1).selectedAction).toBe(action);
+  });
+
+  test('should do nothing if the target undo action crosses a barrier', () => {
+    const undoStack1 = undoStack('created');
+
+    const barrierAction = new ErasedAction('barrier');
+    undoStack1.push(barrierAction);
+
+    const store = writable(0);
+    const setAction = new SetAction(store, 1, 'set 1');
+    setAction.apply();
+    undoStack1.push(setAction);
+
+    undoStack1.goto(get(undoStack1).actions[0].seqNbr);
+
+    expect(get(undoStack1).selectedAction).toBe(setAction);
+    expect(get(undoStack1).canUndo).toBe(true);
+  });
+
+  test('should do nothing if the target redo action touches a barrier', () => {
+    const undoStack1 = undoStack('created');
+    const store = writable(1);
+    undoStack1.loadSnapshot(
+      {
+        index: 0,
+        actions: [
+          { type: 'init', msg: 'init' },
+          { type: 'set', msg: 'set 2', storeId: 'store', data: 2 },
+          { type: 'erased', msg: 'erased' },
+        ],
+      },
+      { store },
+    );
+
+    undoStack1.goto(get(undoStack1).actions[2].seqNbr);
+    expect(get(undoStack1).index).toBe(0);
+    expect(get(store)).toBe(1);
+    expect(get(undoStack1).canRedo).toBe(true);
   });
 });
 
@@ -271,6 +393,113 @@ describe('subscribe', () => {
     undoStack1.undo();
     expect(onChanged).toHaveBeenCalledTimes(2);
     expect(onChanged).toHaveBeenLastCalledWith(get(undoStack1));
+  });
+});
+
+describe('erase', () => {
+  test('should erase all undo steps', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(writable(0), 1, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    undoStack1.erase();
+
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).actions[0]).instanceOf(InitAction);
+    expect(get(undoStack1).actions[1]).instanceOf(ErasedAction);
+    expect(get(undoStack1).actions[2]).instanceOf(ErasedAction);
+    expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).actions[1].msg).toBe('set value 1');
+    expect(get(undoStack1).actions[2].msg).toBe('set value 2');
+  });
+
+  test('should erase starting from the specified action', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(writable(0), 1, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    undoStack1.erase(action1.seqNbr);
+
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).actions[0]).instanceOf(InitAction);
+    expect(get(undoStack1).actions[1]).instanceOf(ErasedAction);
+    expect(get(undoStack1).actions[2]).instanceOf(SetAction);
+    expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).actions[1].msg).toBe('set value 1');
+    expect(get(undoStack1).actions[2].msg).toBe('set value 2');
+  });
+
+  test('should erase until first barrier action is reached', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    undoStack1.push(new ErasedAction('barrier'));
+
+    const action2 = new SetAction(writable(0), 1, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    undoStack1.erase();
+
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).actions[0]).instanceOf(InitAction);
+    expect(get(undoStack1).actions[1]).instanceOf(SetAction);
+    expect(get(undoStack1).actions[2]).instanceOf(ErasedAction);
+    expect(get(undoStack1).actions[3]).instanceOf(ErasedAction);
+    expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).actions[1].msg).toBe('set value 1');
+    expect(get(undoStack1).actions[2].msg).toBe('barrier');
+    expect(get(undoStack1).actions[3].msg).toBe('set value 2');
+  });
+
+  test('should do nothing if some erased actions are unapplied', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(writable(0), 1, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    undoStack1.undo();
+
+    undoStack1.erase();
+
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).actions[0]).instanceOf(InitAction);
+    expect(get(undoStack1).actions[1]).instanceOf(SetAction);
+    expect(get(undoStack1).actions[2]).instanceOf(SetAction);
+  });
+
+  test('should do nothing if an invalid seq number is provided', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    undoStack1.erase(99999);
+
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).actions[0]).instanceOf(InitAction);
+    expect(get(undoStack1).actions[1]).instanceOf(SetAction);
   });
 });
 

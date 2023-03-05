@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { UndoAction } from './action/action';
 import { GroupAction } from './action/action-group';
-import { InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-init';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
 import {
@@ -27,6 +27,7 @@ export class FooAction extends UndoAction<unknown, unknown, string> {
 describe('getActionTypeId', () => {
   test.each([
     { action: new InitAction('InitAction'), actionId: 'init' },
+    { action: new ErasedAction('ErasedAction'), actionId: 'erased' },
     { action: new GroupAction('GroupAction'), actionId: 'group' },
     { action: new SetAction(writable(0), 1, 'SetAction'), actionId: 'set' },
     {
@@ -62,8 +63,24 @@ describe('loadActionsSnapshot', () => {
     expect(undoActions[0].store).toBeUndefined();
     expect(undoActions[0].msg).toBe('InitAction');
 
-    expect(() => undoActions[0].apply()).not.toThrow();
-    expect(() => undoActions[0].revert()).not.toThrow();
+    expect(() => undoActions[0].apply()).toThrow();
+    expect(() => undoActions[0].revert()).toThrow();
+  });
+
+  test('should load erased-action', () => {
+    const erasedActionSnapshot = {
+      type: 'erased',
+      msg: 'ErasedAction',
+    };
+
+    const undoActions = loadActionsSnapshot([erasedActionSnapshot], {});
+    expect(undoActions).toHaveLength(1);
+    expect(undoActions[0]).instanceOf(ErasedAction);
+    expect(undoActions[0].store).toBeUndefined();
+    expect(undoActions[0].msg).toBe('ErasedAction');
+
+    expect(() => undoActions[0].apply()).toThrow();
+    expect(() => undoActions[0].revert()).toThrow();
   });
 
   test('should load group-action', () => {
@@ -192,6 +209,14 @@ describe('createSnapshotFromActions', () => {
     const actionsSnapshot = createSnapshotFromActions([initAction], {});
 
     expect(actionsSnapshot).toEqual([{ type: 'init', msg: 'InitAction' }]);
+  });
+
+  test('should create a snapshot of an erase-action', () => {
+    const erasedAction = new ErasedAction('ErasedAction');
+
+    const actionsSnapshot = createSnapshotFromActions([erasedAction], {});
+
+    expect(actionsSnapshot).toEqual([{ type: 'erased', msg: 'ErasedAction' }]);
   });
 
   test('should create a snapshot of a group-action', () => {
