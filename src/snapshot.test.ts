@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { UndoAction } from './action/action';
 import { GroupAction } from './action/action-group';
-import { ErasedAction, InitAction } from './action/action-init';
+import { ErasedAction, InitAction } from './action/action-barrier';
 import { MutateAction, type MutateActionPatch } from './action/action-mutate';
 import { SetAction } from './action/action-set';
 import {

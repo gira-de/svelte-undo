@@ -1,5 +1,5 @@
 import type { ReadableUndoAction } from './action';
-import { InitAction } from './action-init';
+import { InitAction } from './action-barrier';
 
 describe('ReadableUndoAction', () => {
   test('should not provide any function that mutates the action state', () => {
