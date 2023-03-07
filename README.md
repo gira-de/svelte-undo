@@ -14,6 +14,19 @@ Provides low level utility functions to use Svelte Stores in combination with re
 - **Snapshots** to export/import the undo stack to/from JSON
 - **Typescript** support
 
+## Installation
+
+```bash
+# using npm
+npm install -D @gira-de/svelte-undo
+
+# or using pnpm
+pnpm install -D @gira-de/svelte-undo
+
+# or using yarn
+yarn add -D @gira-de/svelte-undo
+```
+
 ## Usage examples
 
 ### Push actions to undo stack
@@ -42,7 +55,7 @@ console.log($msgStore); // 'old value'
 
 ### Use transactions
 
-Writing and pushing actions to the undo stack might create a lot of boilerplate code. The use of Transaction simplifies this.
+Creating actions and manually pushing them to the undo stack might create a lot of boilerplate code. The use of Transaction simplifies this.
 
 ```ts
 import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
