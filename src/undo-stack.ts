@@ -231,9 +231,8 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     stores: Record<string, unknown>,
   ) {
     const actions = loadActionsSnapshot(undoStackSnapshot.actions, stores);
-    let ticker = 0;
-    for (const action of actions) {
-      action.seqNbr = ticker++;
+    for (let i = 0; i < actions.length; i++) {
+      actions[i].seqNbr = i;
     }
 
     store.set({
@@ -241,7 +240,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       selectedAction: actions[undoStackSnapshot.index],
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
       canUndo: undoStackSnapshot.index > 0,
-      ticker,
+      ticker: 0,
       index: undoStackSnapshot.index,
     });
   }
