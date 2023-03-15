@@ -311,6 +311,9 @@ describe('loadSnapshot', () => {
     expect(get(undoStack1).index).toBe(1);
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
+    expect(get(undoStack1).ticker).toBe(0);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[1]);
+    expect(get(undoStack1).actions.map((a) => a.seqNbr)).toEqual([0, 1]);
 
     undoStack1.undo();
     expect(get(undoStack1).index).toBe(0);
