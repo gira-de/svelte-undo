@@ -522,6 +522,104 @@ describe('clear', () => {
   });
 });
 
+describe('clearUndo', () => {
+  test('should do nothing if first action is selected', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    undoStack1.undo();
+
+    undoStack1.clearUndo();
+    expect(get(undoStack1).index).toBe(0);
+    expect(get(undoStack1).actions).toHaveLength(2);
+    expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(true);
+    expect(get(undoStack1).ticker).toBe(2);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
+    expect(get(undoStack1).selectedAction).instanceOf(InitAction);
+  });
+
+  test('should clear undo action and keep redo action', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(writable(0), 2, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    const action3 = new SetAction(writable(0), 3, 'set value 3');
+    action3.apply();
+    undoStack1.push(action3);
+
+    undoStack1.undo();
+
+    undoStack1.clearUndo();
+    expect(get(undoStack1).index).toBe(0);
+    expect(get(undoStack1).actions).toHaveLength(2);
+    expect(get(undoStack1).actions[0].msg).toBe('set value 2');
+    expect(get(undoStack1).canUndo).toBe(false);
+    expect(get(undoStack1).canRedo).toBe(true);
+    expect(get(undoStack1).ticker).toBe(5);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
+    expect(get(undoStack1).selectedAction).instanceOf(ErasedAction);
+  });
+});
+
+describe('clearRedo', () => {
+  test('should do nothing if last action is selected', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    undoStack1.clearRedo();
+    expect(get(undoStack1).index).toBe(1);
+    expect(get(undoStack1).actions).toHaveLength(2);
+    expect(get(undoStack1).actions[1].msg).toBe('set value 1');
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
+    expect(get(undoStack1).ticker).toBe(1);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[1]);
+    expect(get(undoStack1).selectedAction).instanceOf(SetAction);
+  });
+
+  test('should clear redo action and keep undo action', () => {
+    const undoStack1 = undoStack('created');
+
+    const action1 = new SetAction(writable(0), 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(writable(0), 2, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    const action3 = new SetAction(writable(0), 3, 'set value 3');
+    action3.apply();
+    undoStack1.push(action3);
+
+    undoStack1.undo();
+
+    undoStack1.clearRedo();
+    expect(get(undoStack1).index).toBe(2);
+    expect(get(undoStack1).actions).toHaveLength(3);
+    expect(get(undoStack1).actions[2].msg).toBe('set value 2');
+    expect(get(undoStack1).canUndo).toBe(true);
+    expect(get(undoStack1).canRedo).toBe(false);
+    expect(get(undoStack1).ticker).toBe(5);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[2]);
+    expect(get(undoStack1).selectedAction).instanceOf(SetAction);
+  });
+});
+
 describe('loadSnapshot', () => {
   test('should load undo stack state', () => {
     const undoStack1 = undoStack('created');
