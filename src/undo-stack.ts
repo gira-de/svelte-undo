@@ -125,6 +125,18 @@ export interface UndoStack<TMsg>
   clear: () => void;
 
   /**
+   * Removes all undo action and keeps the redo actions. The selected action
+   * gets erased. Does nothing if the first action is selected.
+   */
+  clearUndo: () => void;
+
+  /**
+   * Removes all redo action and keeps the undo actions. Does nothing if the
+   * last action is selected.
+   */
+  clearRedo: () => void;
+
+  /**
    * Creates a snapshot of the current undo stack that can easily be serialized.
    * @param stores object that contains unique string keys for each store that is references by the undo stack
    * @returns snapshot object of the undo stack
@@ -290,6 +302,35 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     store.set(newUndoStackData(initActionMsg));
   }
 
+  function clearUndo() {
+    store.update((undoStack) => {
+      if (undoStack.index === 0) {
+        return undoStack;
+      }
+
+      undoStack.actions.splice(0, undoStack.index);
+      undoStack.index = 0;
+      undoStack.canUndo = false;
+      undoStack.actions[0] = new ErasedAction(undoStack.actions[0].msg);
+      undoStack.selectedAction = undoStack.actions[0];
+      undoStack.ticker++;
+      return undoStack;
+    });
+  }
+
+  function clearRedo() {
+    store.update((undoStack) => {
+      if (undoStack.index === undoStack.actions.length - 1) {
+        return undoStack;
+      }
+
+      undoStack.actions.splice(undoStack.index + 1);
+      undoStack.canRedo = false;
+      undoStack.ticker++;
+      return undoStack;
+    });
+  }
+
   function createSnapshot(
     stores: Record<string, unknown>,
   ): UndoStackSnapshot<TMsg> {
@@ -328,6 +369,8 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     goto,
     erase,
     clear,
+    clearUndo,
+    clearRedo,
     createSnapshot,
     loadSnapshot,
   };
