@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 0.0.7
+
+### Patch Changes
+
+- fix: ticker should be 0 after loading a snapshot
+
 ## 0.0.6
 
 ### Patch Changes
