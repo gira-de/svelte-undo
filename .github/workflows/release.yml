@@ -9,6 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
+    if: github.repository == 'gira-de/svelte-undo'
     runs-on: ubuntu-latest
 
     steps:
