@@ -1,8 +1,10 @@
 # @gira-de/svelte-undo
 
-Provides low-level utility functions to use Svelte Stores in combination with redo/undo capabilities. Relies on [immer.js](https://immerjs.github.io/immer/).
+Provides low-level utility functions to use Svelte [Stores](https://svelte.dev/tutorial/writable-stores) in combination with redo/undo capabilities. Relies on [immer.js](https://immerjs.github.io/immer/).
 
 [Example App](https://github.com/gira-de/svelte-undo-example)
+
+![](./example-app.gif)
 
 ## Features
 
@@ -82,7 +84,7 @@ console.log($personStore); // { name: 'John', age: '23' }
 
 Limitations: The transaction controller can only be used with Svelte stores that hold an Object-like value (object, array, map, set).
 
-### Save to & load from undo stack
+### Save from & load to undo stack
 
 ```ts
 import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
@@ -133,7 +135,7 @@ The _undoStack_ is basically a Svelte store with various properties and function
 #### Properties
 
 - $myUndoStack.**actions**
-  - a list of all undo steps
+  - a list of all actions that are currently on the undo stack
 - $myUndoStack.**selectedAction**
   - the current active step whose changes are applied to the model
 - $myUndoStack.**canUndo**
@@ -183,7 +185,7 @@ The _undoStack_ is basically a Svelte store with various properties and function
 
 - myTransactionCtrl.**draft(store)**
   - returns a new draft object for the specified store
-  - changes to the draft object are not visible in the store until commit is called
+  - all changes to the draft object must be followed by a commit, otherwise they will not visible in the store
 - myTransactionCtrl.**commit(msg)**
   - applies all draft changes to the corresponding stores
   - calling _commit_ without having any draft changes has no effect
