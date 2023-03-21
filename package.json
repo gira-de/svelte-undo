@@ -1,7 +1,7 @@
 {
   "name": "@gira-de/svelte-undo",
   "description": "Low level undo functionality for Svelte",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "files": [
