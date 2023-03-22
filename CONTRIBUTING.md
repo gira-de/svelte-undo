@@ -2,15 +2,15 @@
 
 ## Bugs
 
-For Bug tracking we use GitHub Issues. Before creating a new bug entry please notice the following:
+For bug tracking we use [GitHub Issues](https://docs.github.com/en/issues). When creating a new bug entry, please abide by the following:
 
-- Check if an issues for this bug has already been created by someone else.
+- First check if an issue has already been created by someone else for the bug.
 - One issue, one bug.
-- Provide steps on how the bug can be reproduced.
+- Provide steps on how to reproduce the bug.
 
 ## RFC
 
-If you plan to make major changes to the project or add new features, please create an RFC to discuss this in advance.
+If you plan on making major changes to the project or to add new features, please create an RFC (request for comment) to discuss this in advance.
 
 ## Release Workflow
 
