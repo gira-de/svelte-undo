@@ -213,4 +213,4 @@ The _undoStack_ is basically a Svelte store with various properties and function
 
 ## Contributing
 
-Contributions are always welcome! Please have a look at our [CONTRIBUTING.md]()
+Contributions are always welcome! Please have a look at our [CONTRIBUTING.md](CONTRIBUTING.md)

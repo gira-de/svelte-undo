@@ -14,13 +14,25 @@ If you plan on making major changes to the project or to add new features, pleas
 
 ## Release Workflow
 
-0. (Optional CS) During development generate changesets with `npx changeset`
-1. (Optional PR) Checkout a new branch from main: `x.x.x-release`
-2. (Optional CS) Apply changesets `pnpm changeset version`
-3. Review/Update [package.json](): version should be incremented
-4. Review/Update [CHANGELOG.md](): shall contain meaningful not too technical descriptions
-5. Commit changes with commit message: `chore: release package`
-6. Push
-7. (Optional PR) Create a pull request for the new release.
+The CI will automatically create a new release when the [package.json](package.json) has been changed on the main branch.
 
-Once the commit is on the main branch a new release is created.
+To update the [package.json](package.json) you have several options.
+
+### Manually updating package.json and changelog
+
+1. Update Version in [package.json](package.json)
+2. Update [CHANGELOG.md](CHANGELOG.md): shall contain meaningful not too technical descriptions
+3. Commit changes with commit message: `chore: release package`
+4. Push
+
+Once the commit is merged on the main branch a new release is created.
+
+### Using Changesets
+
+1. During development generate and push changesets with `npx changeset`
+2. Changeset Bot will automatically create a release branch and a PR.
+3. The release branch is automatically updated if the changesets changes
+4. Review release PR or make changes to the PR
+5. Merge PR
+
+Once the PR is accepted a new release is created.
