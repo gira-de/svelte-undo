@@ -356,7 +356,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       selectedAction: actions[undoStackSnapshot.index],
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
       canUndo: undoStackSnapshot.index > 0,
-      ticker: 0,
+      ticker: actions.length - 1,
       index: undoStackSnapshot.index,
     });
   }

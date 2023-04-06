@@ -646,6 +646,26 @@ describe('loadSnapshot', () => {
     expect(get(undoStack1).index).toBe(0);
     expect(get(fooStore)).toBe(0);
   });
+
+  test('should continue seqNbr from highest seqNbr for new actions after a load', () => {
+    const undoStack1 = undoStack('created');
+
+    const undoStackSnapshot: UndoStackSnapshot<string> = {
+      index: 1,
+      actions: [
+        { type: 'init', msg: 'created' },
+        { type: 'set', storeId: 'foo', msg: 'set value 1', data: 0 },
+      ],
+    };
+    const fooStore = writable(1);
+    undoStack1.loadSnapshot(undoStackSnapshot, { foo: fooStore });
+    const action = new SetAction(fooStore, 2, 'set value 2');
+    action.apply();
+    undoStack1.push(action);
+    const actions = get(undoStack1).actions
+    expect(actions.length).toEqual(3)
+    expect(actions[2].seqNbr).toEqual(2)
+  })
 });
 
 describe('createSnapshot', () => {
