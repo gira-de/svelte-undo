@@ -166,19 +166,28 @@ The _undoStack_ is basically a Svelte store with various properties and function
 - myUndoStack.**goto(seqNbr)**
   - selects the action for the specified sequence number (_action.seqNbr_) and applies/reverts all actions between
   - has basically the same effect as calling undo/redo in a loop
-- myUndoStack.**erase(seqNbr?)**
-  - removes undo/redo capability from actions to reduce the size of the undo stack
-  - all actions starting from the specified sequence number are erased
-  - starts erasing from the top of the stack if seqNbr is undefined
-  - erased actions are still included on the undo stack in form of log entries
 - myUndoStack.**clear()**
   - removes all actions from the undo stack and creates a new init action
   - has the same effect as if a new undo stack has been created
+- myUndoStack.**clearRedo()**
+  - Removes all redoable actions from the stack
+  - This is the same as would happen if a new action is pushed while not being at the latest state,
+    just without pushing the action
+- myUndoStack.**clearUndo()**
+  - Deletes all previous undo actions
+  - If the current position is the top of the stack, this effectively deletes the whole undo stack
+  - If not at the top of the stack, undo actions are still available and undo is possible
 - myUndoStack.**createSnapshot(stores)**
   - creates and returns a snapshot of the undo stack
   - the snapshot can be easily serialized since it does not contain any store references etc.
 - myUndoStack.**loadSnapshot(undoStackSnapshot, stores)**
   - clears the undo stack and then loads the specified snapshot
+- myUndoStack.**erase(seqNbr?)**
+  - removes undo/redo capability from actions to reduce the size of the undo stack
+  - all actions starting from the specified sequence number are erased
+  - starts erasing from the top of the stack if seqNbr is undefined
+  - erased actions are still included on the undo stack in form of log entries
+  - this function is currently experimental and might not always yield the expected state
 
 ### transactionCtrl
 

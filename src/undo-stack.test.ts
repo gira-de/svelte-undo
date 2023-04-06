@@ -638,7 +638,7 @@ describe('loadSnapshot', () => {
     expect(get(undoStack1).index).toBe(1);
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).ticker).toBe(0);
+    expect(get(undoStack1).ticker).toBe(1); // Continue new seqNbr from the highest number after calling loadSnapshot()
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[1]);
     expect(get(undoStack1).actions.map((a) => a.seqNbr)).toEqual([0, 1]);
 
@@ -662,10 +662,10 @@ describe('loadSnapshot', () => {
     const action = new SetAction(fooStore, 2, 'set value 2');
     action.apply();
     undoStack1.push(action);
-    const actions = get(undoStack1).actions
-    expect(actions.length).toEqual(3)
-    expect(actions[2].seqNbr).toEqual(2)
-  })
+    const actions = get(undoStack1).actions;
+    expect(actions.length).toEqual(3);
+    expect(actions[2].seqNbr).toEqual(2);
+  });
 });
 
 describe('createSnapshot', () => {
