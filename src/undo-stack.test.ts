@@ -10,9 +10,6 @@ describe('undoStack', () => {
     // @ts-expect-error index should be readonly
     get(undoStack1).index = -1;
 
-    // @ts-expect-error ticker should be readonly
-    get(undoStack1).ticker = -1;
-
     // @ts-expect-error selectedAction should be readonly
     get(undoStack1).selectedAction = new InitAction('asdf');
 
@@ -417,6 +414,9 @@ describe('erase', () => {
     expect(get(undoStack1).actions[0].msg).toBe('created');
     expect(get(undoStack1).actions[1].msg).toBe('set value 1');
     expect(get(undoStack1).actions[2].msg).toBe('set value 2');
+    expect(get(undoStack1).actions[0].seqNbr).toBe(0);
+    expect(get(undoStack1).actions[1].seqNbr).toBe(1);
+    expect(get(undoStack1).actions[2].seqNbr).toBe(2);
   });
 
   test('should erase starting from the specified action', () => {
@@ -439,6 +439,9 @@ describe('erase', () => {
     expect(get(undoStack1).actions[0].msg).toBe('created');
     expect(get(undoStack1).actions[1].msg).toBe('set value 1');
     expect(get(undoStack1).actions[2].msg).toBe('set value 2');
+    expect(get(undoStack1).actions[0].seqNbr).toBe(0);
+    expect(get(undoStack1).actions[1].seqNbr).toBe(1);
+    expect(get(undoStack1).actions[2].seqNbr).toBe(2);
   });
 
   test('should erase until first barrier action is reached', () => {
@@ -465,6 +468,10 @@ describe('erase', () => {
     expect(get(undoStack1).actions[1].msg).toBe('set value 1');
     expect(get(undoStack1).actions[2].msg).toBe('barrier');
     expect(get(undoStack1).actions[3].msg).toBe('set value 2');
+    expect(get(undoStack1).actions[0].seqNbr).toBe(0);
+    expect(get(undoStack1).actions[1].seqNbr).toBe(1);
+    expect(get(undoStack1).actions[2].seqNbr).toBe(2);
+    expect(get(undoStack1).actions[3].seqNbr).toBe(3);
   });
 
   test('should do nothing if some erased actions are unapplied', () => {
@@ -515,9 +522,9 @@ describe('clear', () => {
     expect(get(undoStack1).index).toBe(0);
     expect(get(undoStack1).actions).toHaveLength(1);
     expect(get(undoStack1).actions[0].msg).toBe('created');
+    expect(get(undoStack1).actions[0].seqNbr).toBe(2);
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).ticker).toBe(0);
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
   });
 });
@@ -538,7 +545,6 @@ describe('clearUndo', () => {
     expect(get(undoStack1).actions[0].msg).toBe('created');
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(true);
-    expect(get(undoStack1).ticker).toBe(2);
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
     expect(get(undoStack1).selectedAction).instanceOf(InitAction);
   });
@@ -566,7 +572,6 @@ describe('clearUndo', () => {
     expect(get(undoStack1).actions[0].msg).toBe('set value 2');
     expect(get(undoStack1).canUndo).toBe(false);
     expect(get(undoStack1).canRedo).toBe(true);
-    expect(get(undoStack1).ticker).toBe(5);
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[0]);
     expect(get(undoStack1).selectedAction).instanceOf(ErasedAction);
   });
@@ -586,7 +591,6 @@ describe('clearRedo', () => {
     expect(get(undoStack1).actions[1].msg).toBe('set value 1');
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).ticker).toBe(1);
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[1]);
     expect(get(undoStack1).selectedAction).instanceOf(SetAction);
   });
@@ -614,7 +618,6 @@ describe('clearRedo', () => {
     expect(get(undoStack1).actions[2].msg).toBe('set value 2');
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).ticker).toBe(5);
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[2]);
     expect(get(undoStack1).selectedAction).instanceOf(SetAction);
   });
@@ -638,16 +641,15 @@ describe('loadSnapshot', () => {
     expect(get(undoStack1).index).toBe(1);
     expect(get(undoStack1).canUndo).toBe(true);
     expect(get(undoStack1).canRedo).toBe(false);
-    expect(get(undoStack1).ticker).toBe(1); // Continue new seqNbr from the highest number after calling loadSnapshot()
     expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[1]);
-    expect(get(undoStack1).actions.map((a) => a.seqNbr)).toEqual([0, 1]);
+    expect(get(undoStack1).actions.map((a) => a.seqNbr)).toEqual([1, 2]);
 
     undoStack1.undo();
     expect(get(undoStack1).index).toBe(0);
     expect(get(fooStore)).toBe(0);
   });
 
-  test('should continue seqNbr from highest seqNbr for new actions after a load', () => {
+  test('should continue seqNbr from all actions ever pushed since undo stack has been created', () => {
     const undoStack1 = undoStack('created');
 
     const undoStackSnapshot: UndoStackSnapshot<string> = {
@@ -664,7 +666,7 @@ describe('loadSnapshot', () => {
     undoStack1.push(action);
     const actions = get(undoStack1).actions;
     expect(actions.length).toEqual(3);
-    expect(actions[2].seqNbr).toEqual(2);
+    expect(actions[2].seqNbr).toEqual(3);
   });
 });
 

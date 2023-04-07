@@ -18,7 +18,6 @@ type UndoStackData<TMsg> = {
   canRedo: boolean;
   canUndo: boolean;
   index: number;
-  ticker: number;
 };
 
 type ReadableUndoStackData<TMsg> = {
@@ -48,23 +47,20 @@ type ReadableUndoStackData<TMsg> = {
    * index is the selected action. Any value between 0 and actions.length - 1
    */
   readonly index: number;
-
-  /**
-   * 0 after the stack has been created and gets increments with each state
-   * change, e.g. push, redo, undo, ...
-   */
-  readonly ticker: number;
 };
 
-function newUndoStackData<TMsg>(initActionMsg: TMsg): UndoStackData<TMsg> {
+function newUndoStackData<TMsg>(
+  seqNbr: number,
+  initActionMsg: TMsg,
+): UndoStackData<TMsg> {
   const selectedAction = new InitAction(initActionMsg);
+  selectedAction.seqNbr = seqNbr;
   return {
     actions: [selectedAction],
     selectedAction,
     canRedo: false,
     canUndo: false,
     index: 0,
-    ticker: 0,
   };
 }
 
@@ -163,13 +159,17 @@ export interface UndoStack<TMsg>
  * @returns Svelte store of an undo stack
  */
 export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
-  const store = writable(newUndoStackData(initActionMsg));
+  let highestSeqNbr = -1;
+  function nextSeqNbr() {
+    return ++highestSeqNbr;
+  }
+
+  const store = writable(newUndoStackData(nextSeqNbr(), initActionMsg));
 
   function push(action: UndoAction<unknown, unknown, TMsg>) {
     store.update((undoStack) => {
-      undoStack.ticker++;
-      action.seqNbr = undoStack.ticker;
       const deleteCount = undoStack.actions.length - undoStack.index - 1;
+      action.seqNbr = nextSeqNbr();
       undoStack.actions.splice(undoStack.index + 1, deleteCount, action);
       undoStack.index = undoStack.actions.length - 1;
       undoStack.selectedAction = action;
@@ -195,7 +195,6 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
         undoStack.index > 0 &&
         !(undoStack.selectedAction instanceof BarrierAction);
       undoStack.canRedo = true;
-      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -216,7 +215,6 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
         undoStack.index < undoStack.actions.length - 1 &&
         !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
       undoStack.selectedAction = undoStack.actions[undoStack.index];
-      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -261,7 +259,6 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.canRedo =
         undoStack.index < undoStack.actions.length - 1 &&
         !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
-      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -289,17 +286,18 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
           break;
         }
 
-        undoStack.actions[i] = new ErasedAction(action.msg);
+        const erasedAction = new ErasedAction(action.msg);
+        erasedAction.seqNbr = action.seqNbr;
+        undoStack.actions[i] = erasedAction;
       }
 
       undoStack.canUndo = undoStack.index > startIndex;
-      undoStack.ticker++;
       return undoStack;
     });
   }
 
   function clear() {
-    store.set(newUndoStackData(initActionMsg));
+    store.set(newUndoStackData(nextSeqNbr(), initActionMsg));
   }
 
   function clearUndo() {
@@ -311,9 +309,10 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       undoStack.actions.splice(0, undoStack.index);
       undoStack.index = 0;
       undoStack.canUndo = false;
-      undoStack.actions[0] = new ErasedAction(undoStack.actions[0].msg);
-      undoStack.selectedAction = undoStack.actions[0];
-      undoStack.ticker++;
+      const firstAction = new ErasedAction(undoStack.actions[0].msg);
+      firstAction.seqNbr = undoStack.actions[0].seqNbr;
+      undoStack.actions[0] = firstAction;
+      undoStack.selectedAction = firstAction;
       return undoStack;
     });
   }
@@ -326,7 +325,6 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
 
       undoStack.actions.splice(undoStack.index + 1);
       undoStack.canRedo = false;
-      undoStack.ticker++;
       return undoStack;
     });
   }
@@ -347,16 +345,13 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     stores: Record<string, unknown>,
   ) {
     const actions = loadActionsSnapshot(undoStackSnapshot.actions, stores);
-    for (let i = 0; i < actions.length; i++) {
-      actions[i].seqNbr = i;
-    }
+    actions.forEach((a) => (a.seqNbr = nextSeqNbr()));
 
     store.set({
       actions,
       selectedAction: actions[undoStackSnapshot.index],
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
       canUndo: undoStackSnapshot.index > 0,
-      ticker: actions.length - 1,
       index: undoStackSnapshot.index,
     });
   }

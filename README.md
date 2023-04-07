@@ -147,9 +147,6 @@ The _undoStack_ is basically a Svelte store with various properties and function
 - $myUndoStack.**index**
   - the index of the current _selectedAction_
   - e.g. is _0_ if _canUndo_ is false
-- $myUndoStack.**ticker**
-  - _0_ after the undo stack is created, cleared or a snapshot has been loaded
-  - gets incremented by one after each each change on the undo stack (e.g. undo, redo, push, ...)
 
 #### Functions
 
