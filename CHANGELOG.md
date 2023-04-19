@@ -1,5 +1,17 @@
 # @gira-de/svelte-undo
 
+## 1.1.0
+
+### Minor Changes
+
+- b79b942: feat: add clearUndo()/clearRedo() function to the undo stack to only remove applied/unapplied actions
+- bf29205: feat: add erase() function to the undo stack that can be used to reduce the stack size while keeping the undo history messages
+
+### Patch Changes
+
+- e87e984: remove: ticker from undo stack as its purpose is not really clear
+- e87e984: fix: wrong seqNbr after erase() or clearUndo()
+
 ## 1.0.0
 
 ### Major Changes
