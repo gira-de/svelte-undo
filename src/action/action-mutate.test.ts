@@ -1,6 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { MutateAction, type MutateActionPatch } from './action-mutate';
-import produce from 'immer';
+import { produce } from 'immer';
 
 describe('MutateAction', () => {
   test('should apply and revert values', () => {

@@ -1,6 +1,5 @@
 import { createDraft, finishDraft } from 'immer';
-import type { Patch } from 'immer';
-import type { Objectish } from 'immer/dist/internal';
+import type { Patch, Objectish } from 'immer';
 import { get } from 'svelte/store';
 import type { Writable } from 'svelte/store';
 import { MutateAction } from './action/action-mutate';

@@ -1,7 +1,6 @@
 import { UndoAction } from './action';
 import { enablePatches, enableMapSet, applyPatches } from 'immer';
-import type { Patch } from 'immer';
-import type { Objectish } from 'immer/dist/internal';
+import type { Patch, Objectish } from 'immer';
 import type { Writable } from 'svelte/store';
 
 enablePatches();
