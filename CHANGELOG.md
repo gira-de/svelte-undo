@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 1.1.1
+
+### Patch Changes
+
+- chore: upgrade package dependencies
+
 ## 1.1.0
 
 ### Minor Changes
