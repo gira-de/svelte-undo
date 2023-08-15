@@ -1,5 +1,16 @@
 # @gira-de/svelte-undo
 
+## 1.2.0
+
+### Minor Changes
+
+- 4574739: chore: upgrade svelte to v4
+- 4749519: chore: upgrade immer to v10
+
+### Patch Changes
+
+- 4574739: chore: upgrade dependencies to fix vulnerabilities
+
 ## 1.1.1
 
 ### Patch Changes
