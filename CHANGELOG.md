@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 1.2.1
+
+### Patch Changes
+
+- a636754: fix missing typescript types
+
 ## 1.2.0
 
 ### Minor Changes
