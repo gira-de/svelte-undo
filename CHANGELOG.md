@@ -1,5 +1,11 @@
 # @gira-de/svelte-undo
 
+## 1.2.2
+
+### Patch Changes
+
+- d6f17af: chore: upgrade dependencies
+
 ## 1.2.1
 
 ### Patch Changes
