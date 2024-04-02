@@ -14,25 +14,20 @@ If you plan on making major changes to the project or to add new features, pleas
 
 ## Release Workflow
 
-The CI will automatically create a new release when the [package.json](package.json) has been changed on the main branch.
+The CI will automatically create a new release when the package version (see [package.json](package.json)) has changed on the main branch.
 
-To update the [package.json](package.json) you have several options.
+The package version should be maintained by using [Changesets](https://github.com/changesets/changesets/blob/main/docs/intro-to-using-changesets.md). Although not recommended it is always possible to manually update the changelog und package version.
 
-### Manually updating package.json and changelog
+### Using Changesets (recommended)
 
-1. Update Version in [package.json](package.json)
-2. Update [CHANGELOG.md](CHANGELOG.md): shall contain meaningful not too technical descriptions
-3. Commit changes with commit message: `chore: release package`
-4. Push
+1. The developer creates a new changeset for each bug-fix, feature, ... with `npx changeset`. Each changeset shall contain a meaningful not too technical description.
+2. Everytime a new changeset appear on the main branch, the Changset-Bot updates the release branch by calling `npx changeset version`
+3. To create a new release: review and merge the 'chore: release package' PR
 
-Once the commit is merged on the main branch a new release is created.
+### Manually updating package.json and changelog (NOT recommended)
 
-### Using Changesets
-
-1. During development generate and push changesets with `npx changeset`
-2. Changeset Bot will automatically create a release branch and a PR.
-3. The release branch is automatically updated if the changesets changes
-4. Review release PR or make changes to the PR
-5. Merge PR
-
-Once the PR is accepted a new release is created.
+1. Don't use this method if the main branch already contains changesets or run `npx changeset version` first
+2. Update Version in [package.json](package.json)
+3. Update [CHANGELOG.md](CHANGELOG.md): shall contain meaningful not too technical descriptions
+4. Commit changes with commit message: `chore: release package`
+5. To create a new release: review and merged the commit to the main branch
