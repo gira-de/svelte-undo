@@ -1,5 +1,5 @@
 ---
-"@gira-de/svelte-undo": patch
+'@gira-de/svelte-undo': patch
 ---
 
 Explicitly export types

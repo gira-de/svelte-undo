@@ -1,11 +1,5 @@
 # @gira-de/svelte-undo
 
-## 1.2.2
-
-### Patch Changes
-
-- Explicitly export types in package.json
-
 ## 1.2.1
 
 ### Patch Changes
