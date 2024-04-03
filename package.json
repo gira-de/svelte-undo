@@ -11,8 +11,14 @@
   "module": "./dist/svelte-undo.es.js",
   "exports": {
     ".": {
-      "import": "./dist/svelte-undo.es.js",
-      "require": "./dist/svelte-undo.umd.js"
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/svelte-undo.es.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/svelte-undo.umd.js"
+      }
     }
   },
   "types": "./dist/types/index.d.ts",
@@ -32,25 +38,25 @@
     "precommit": "pnpm check && pnpm coverage && pnpm format && pnpm lint && pnpm build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.26.2",
-    "@types/node": "^20.8.8",
-    "@typescript-eslint/eslint-plugin": "^6.9.0",
-    "@typescript-eslint/parser": "^6.9.0",
-    "@vitest/coverage-istanbul": "^0.34.6",
-    "@vitest/ui": "^0.34.6",
-    "eslint": "^8.52.0",
-    "prettier": "^3.0.3",
-    "prettier-plugin-svelte": "^3.0.3",
-    "svelte": "^4.2.2",
+    "@changesets/cli": "^2.27.1",
+    "@types/node": "^20.12.3",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
+    "@vitest/coverage-istanbul": "^1.4.0",
+    "@vitest/ui": "^1.4.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "prettier-plugin-svelte": "^3.2.2",
+    "svelte": "^4.2.12",
     "tslib": "^2.6.2",
-    "typescript": "^5.2.2",
-    "vite": "^4.5.0",
-    "vite-plugin-dts": "^3.6.1",
-    "vitest": "^0.34.6"
+    "typescript": "^5.4.3",
+    "vite": "^5.2.7",
+    "vite-plugin-dts": "^3.8.1",
+    "vitest": "^1.4.0"
   },
   "homepage": "https://github.com/gira-de/svelte-undo#readme",
   "dependencies": {
-    "immer": "^10.0.3"
+    "immer": "^10.0.4"
   },
   "peerDependencies": {
     "svelte": "^3.55.1 || ^4.0.0"
