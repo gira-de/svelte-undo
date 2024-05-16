@@ -2,4 +2,4 @@
 "@gira-de/svelte-undo": patch
 ---
 
-Upgrade PNPM to version 8
+Upgrade PNPM to version 9
