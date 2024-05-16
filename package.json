@@ -66,6 +66,5 @@
   },
   "bugs": {
     "url": "https://github.com/gira-de/svelte-undo/issues"
-  },
-  "packageManager": "^pnpm@8.0.0"
+  }
 }
