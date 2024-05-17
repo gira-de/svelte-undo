@@ -1,4 +1,4 @@
-import { undoStack } from './undo-stack';
+import { undoStack } from './undo-stack.svelte';
 import { get, writable } from 'svelte/store';
 import { transactionCtrl } from './transaction';
 

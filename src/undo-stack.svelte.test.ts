@@ -1,4 +1,4 @@
-import { UndoStackSnapshot, undoStack } from './undo-stack';
+import { UndoStackSnapshot, undoStack } from './undo-stack.svelte';
 import { get, writable } from 'svelte/store';
 import { SetAction } from './action/action-set';
 import { ErasedAction, InitAction } from './action/action-barrier';

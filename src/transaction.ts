@@ -4,7 +4,7 @@ import { get } from 'svelte/store';
 import type { Writable } from 'svelte/store';
 import { MutateAction } from './action/action-mutate';
 import { GroupAction } from './action/action-group';
-import type { ActionStack } from './undo-stack';
+import type { ActionStack } from './undo-stack.svelte';
 
 export interface TransactionCtrl<TMsg> {
   /**
