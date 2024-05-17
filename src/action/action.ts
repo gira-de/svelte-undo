@@ -1,26 +1,29 @@
 export interface ReadableUndoAction<TMsg> {
+  readonly storeId: string | undefined;
   readonly msg: TMsg;
   readonly seqNbr: number;
+  readonly type: string;
 }
 
-export abstract class UndoAction<TStore, TPatch, TMsg>
-  implements ReadableUndoAction<TMsg>
-{
-  readonly store: TStore;
-  protected _patch: TPatch;
-  readonly msg: TMsg;
-  seqNbr = 0;
+export interface UndoAction<TMsg> extends ReadableUndoAction<TMsg> {
+  seqNbr: number;
+  readonly patch: unknown;
+  apply(): void;
+  revert(): void;
+}
 
-  constructor(store: TStore, patch: TPatch, msg: TMsg) {
-    this.store = store;
-    this._patch = patch;
-    this.msg = msg;
-  }
+const BarrierPatch = Object.freeze({});
 
-  get patch() {
-    return this._patch;
-  }
+export function barrierAction<TMsg>(
+  action: Omit<UndoAction<TMsg>, 'patch' | 'storeId'>,
+): UndoAction<TMsg> {
+  return {
+    ...action,
+    patch: BarrierPatch,
+    storeId: undefined,
+  };
+}
 
-  abstract apply(): void;
-  abstract revert(): void;
+export function isBarrierAction(action: UndoAction<unknown>) {
+  return action.patch === BarrierPatch;
 }

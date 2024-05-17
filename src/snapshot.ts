@@ -1,10 +1,11 @@
-import type { Writable } from 'svelte/store';
-import type { UndoAction } from './action/action';
-import { GroupAction } from './action/action-group';
-import { ErasedAction, InitAction } from './action/action-barrier';
-import { MutateAction, type MutateActionPatch } from './action/action-mutate';
-import { SetAction } from './action/action-set';
+import { isBarrierAction, type UndoAction } from './action/action';
 import type { Objectish } from 'immer';
+import { UndoState } from './state.svelte';
+import { setAction } from './action/action-set';
+import { MutateActionPatch, mutateAction } from './action/action-mutate';
+import { groupAction } from './action/action-group';
+import { initAction } from './action/action-init';
+import { erasedAction } from './action/action-erased';
 
 export type UndoActionSnapshot<TMsg> = {
   type: string;
@@ -13,19 +14,11 @@ export type UndoActionSnapshot<TMsg> = {
   data?: unknown;
 };
 
-const actionIds = {
-  [InitAction.name]: 'init',
-  [ErasedAction.name]: 'erased',
-  [GroupAction.name]: 'group',
-  [SetAction.name]: 'set',
-  [MutateAction.name]: 'mutate',
-};
-
 export function loadActionsSnapshot<TMsg>(
   actionsSnapshot: UndoActionSnapshot<TMsg>[],
   stores: Record<string, unknown>,
 ) {
-  const stackedActions: UndoAction<unknown, unknown, TMsg>[] = [];
+  const stackedActions: UndoAction<TMsg>[] = [];
 
   for (const actionSnapshot of actionsSnapshot) {
     const action = loadActionSnapshot(actionSnapshot);
@@ -34,19 +27,23 @@ export function loadActionsSnapshot<TMsg>(
 
   function loadActionSnapshot<TMsg>(
     actionSnapshot: UndoActionSnapshot<TMsg>,
-  ): UndoAction<unknown, unknown, TMsg> {
+  ): UndoAction<TMsg> {
     if (actionSnapshot.type === 'group') {
       const actionsSnapshot =
         actionSnapshot.data as UndoActionSnapshot<undefined>[];
-      const groupAction = new GroupAction(actionSnapshot.msg);
+      const newGroupAction = groupAction(actionSnapshot.msg);
       for (const actionSnapshot of actionsSnapshot) {
-        groupAction.push(loadActionSnapshot(actionSnapshot));
+        newGroupAction.push(loadActionSnapshot(actionSnapshot));
       }
-      return groupAction;
-    } else if (actionSnapshot.type === 'init') {
-      return new InitAction(actionSnapshot.msg);
-    } else if (actionSnapshot.type === 'erased') {
-      return new ErasedAction(actionSnapshot.msg);
+      return newGroupAction;
+    }
+
+    if (actionSnapshot.type === 'init') {
+      return initAction(actionSnapshot.msg);
+    }
+
+    if (actionSnapshot.type === 'erased') {
+      return erasedAction(actionSnapshot.msg);
     }
 
     if (!actionSnapshot.storeId) {
@@ -54,65 +51,45 @@ export function loadActionsSnapshot<TMsg>(
     }
 
     if (actionSnapshot.type === 'set') {
-      return new SetAction(
-        stores[actionSnapshot.storeId] as Writable<unknown>,
+      return setAction(
+        stores[actionSnapshot.storeId] as UndoState<unknown>,
         actionSnapshot.data,
         actionSnapshot.msg,
       );
     } else if (actionSnapshot.type === 'mutate') {
-      return new MutateAction(
-        stores[actionSnapshot.storeId] as Writable<Objectish>,
+      return mutateAction(
+        stores[actionSnapshot.storeId] as UndoState<Objectish>,
         actionSnapshot.data as MutateActionPatch,
         actionSnapshot.msg,
       );
     }
 
-    throw new Error('failed to create action');
+    throw new Error(`invalid action type '${actionSnapshot.type}'`);
   }
 
   return stackedActions;
 }
 
-export function createSnapshotFromActions<TMsg>(
-  actions: UndoAction<unknown, unknown, TMsg>[],
-  stores: Record<string, unknown>,
-) {
-  const storeIds = new Map<unknown, string>();
-  for (const [key, value] of Object.entries(stores)) {
-    storeIds.set(value, key);
-  }
-
-  return createSnapshot(actions, storeIds);
+export function createSnapshotFromActions<TMsg>(actions: UndoAction<TMsg>[]) {
+  return createSnapshot(actions);
 }
 
-function createSnapshot<TMsg>(
-  actions: UndoAction<unknown, unknown, TMsg>[],
-  storeIds: Map<unknown, string>,
-) {
+function createSnapshot<TMsg>(actions: UndoAction<TMsg>[]) {
   const actionSnapshots: UndoActionSnapshot<TMsg>[] = [];
 
   for (const action of actions) {
-    let data: unknown = undefined;
-    if (Array.isArray(action.patch)) {
-      data = createSnapshot(
-        action.patch as UndoAction<unknown, unknown, TMsg>[],
-        storeIds,
-      );
+    let data: unknown;
+    if (isBarrierAction(action)) {
+      data = undefined;
+    } else if (Array.isArray(action.patch)) {
+      data = createSnapshot(action.patch as UndoAction<TMsg>[]);
     } else {
       data = action.patch;
     }
 
-    let storeId: string | undefined = undefined;
-    if (action.store) {
-      storeId = storeIds.get(action.store);
-      if (!storeId) {
-        throw new Error('missing store id');
-      }
-    }
-
     actionSnapshots.push({
-      type: getActionTypeId(action),
-      storeId,
+      type: action.type,
+      storeId: action.storeId,
       msg: action.msg,
       data,
     });
@@ -120,11 +97,3 @@ function createSnapshot<TMsg>(
 
   return actionSnapshots;
 }
-
-function getActionTypeId(action: UndoAction<unknown, unknown, unknown>) {
-  return actionIds[action.constructor.name];
-}
-
-export const exportedForTesting = {
-  getActionTypeId,
-};

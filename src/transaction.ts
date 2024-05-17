@@ -1,10 +1,9 @@
 import { createDraft, finishDraft } from 'immer';
 import type { Patch, Objectish } from 'immer';
-import { get } from 'svelte/store';
-import type { Writable } from 'svelte/store';
-import { MutateAction } from './action/action-mutate';
-import { GroupAction } from './action/action-group';
-import type { ActionStack } from './undo-stack.svelte';
+import { UndoState } from './state.svelte';
+import { mutateAction } from './action/action-mutate';
+import { groupAction } from './action/action-group';
+import { UndoAction } from './action/action';
 
 export interface TransactionCtrl<TMsg> {
   /**
@@ -14,7 +13,7 @@ export interface TransactionCtrl<TMsg> {
    *
    * @param store the store for which the draft state should be created
    */
-  draft<TData extends Objectish>(store: Writable<TData>): TData;
+  draft<TData extends Objectish>(store: UndoState<TData>): TData;
 
   /**
    * Applies the changes of the draft state(s) to the stores and adds
@@ -40,18 +39,18 @@ export interface TransactionCtrl<TMsg> {
  *
  * Only one transaction controller per undo stack is allowed.
  *
- * @param actionStack The undo stack where the history entries shall be stored
+ * @param pushFunc function that should the called to push new items on the undo stack. Normally undoStack.push
  * @returns instance of a transaction controller
  */
 export function transactionCtrl<TMsg>(
-  actionStack: ActionStack<TMsg>,
+  pushFunc: (action: UndoAction<TMsg>) => void,
 ): TransactionCtrl<TMsg> {
-  const draftValues: Map<Writable<Objectish>, Objectish> = new Map();
+  const draftValues: Map<UndoState<Objectish>, Objectish> = new Map();
 
-  function draft<TData extends Objectish>(store: Writable<TData>) {
+  function draft<TData extends Objectish>(store: UndoState<TData>) {
     let draftValue = draftValues.get(store);
     if (draftValue === undefined) {
-      const storeValue = get(store);
+      const storeValue = store.value;
       draftValue = createDraft(storeValue);
       draftValues.set(store, draftValue);
     }
@@ -79,22 +78,18 @@ export function transactionCtrl<TMsg>(
 
     if (storeUpdates.length === 1) {
       const storeUpdate = storeUpdates[0];
-      const action = new MutateAction(
-        storeUpdate.store,
-        storeUpdate.patch,
-        msg,
-      );
-      storeUpdate.store.set(storeUpdate.newValue);
-      actionStack.push(action);
+      const action = mutateAction(storeUpdate.store, storeUpdate.patch, msg);
+      storeUpdate.store.value = storeUpdate.newValue;
+      pushFunc(action);
     } else if (storeUpdates.length > 1) {
-      const action = new GroupAction<TMsg>(msg);
+      const action = groupAction<TMsg>(msg);
       for (const storeUpdate of storeUpdates) {
         action.push(
-          new MutateAction(storeUpdate.store, storeUpdate.patch, undefined),
+          mutateAction(storeUpdate.store, storeUpdate.patch, undefined),
         );
-        storeUpdate.store.set(storeUpdate.newValue);
+        storeUpdate.store.value = storeUpdate.newValue;
       }
-      actionStack.push(action);
+      pushFunc(action);
     }
 
     draftValues.clear();

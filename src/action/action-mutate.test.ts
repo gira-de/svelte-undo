@@ -1,49 +1,47 @@
-import { get, writable } from 'svelte/store';
-import { MutateAction, type MutateActionPatch } from './action-mutate';
+import { undoState } from '../state.svelte';
+import { mutateAction, type MutateActionPatch } from './action-mutate';
 import { produce } from 'immer';
 
 describe('MutateAction', () => {
   test('should apply and revert values', () => {
-    const store = writable({ value: 0 });
+    const foo = undoState('foo', { bar: 0 });
     const patch: MutateActionPatch = { patches: [], inversePatches: [] };
-    store.update((state) => {
-      return produce(
-        state,
-        (storeValue) => {
-          storeValue.value = 1;
-        },
-        (patches, inversePatches) => {
-          patch.patches = patches;
-          patch.inversePatches = inversePatches;
-        },
-      );
-    });
-    const action = new MutateAction(store, patch, 'MutateAction');
+    foo.value = produce(
+      foo.value,
+      (value) => {
+        value.bar = 1;
+      },
+      (patches, inversePatches) => {
+        patch.patches = patches;
+        patch.inversePatches = inversePatches;
+      },
+    );
+    const action = mutateAction(foo, patch, 'MutateAction');
 
-    expect(get(store)).toStrictEqual({ value: 1 });
+    expect(foo.value).toStrictEqual({ bar: 1 });
 
     action.revert();
-    expect(get(store)).toStrictEqual({ value: 0 });
+    expect(foo.value).toStrictEqual({ bar: 0 });
 
     action.apply();
-    expect(get(store)).toStrictEqual({ value: 1 });
+    expect(foo.value).toStrictEqual({ bar: 1 });
   });
 
   test('should load patch', () => {
     const msg = 'MutateAction';
-    const store = writable({ value: 0 });
+    const foo = undoState('foo', { bar: 0 });
     const data: MutateActionPatch = {
-      inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
-      patches: [{ op: 'replace', path: ['value'], value: 1 }],
+      inversePatches: [{ op: 'replace', path: ['bar'], value: 0 }],
+      patches: [{ op: 'replace', path: ['bar'], value: 1 }],
     };
 
-    const action = new MutateAction(store, data, msg);
+    const action = mutateAction(foo, data, msg);
     expect(action?.msg).toEqual('MutateAction');
 
     action?.apply();
-    expect(get(store)).toStrictEqual({ value: 1 });
+    expect(foo.value).toStrictEqual({ bar: 1 });
 
     action?.revert();
-    expect(get(store)).toStrictEqual({ value: 0 });
+    expect(foo.value).toStrictEqual({ bar: 0 });
   });
 });

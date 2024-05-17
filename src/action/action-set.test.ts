@@ -1,18 +1,18 @@
-import { get, writable } from 'svelte/store';
-import { SetAction } from './action-set';
+import { undoState } from '../state.svelte';
+import { setAction } from './action-set';
 
 describe('SetAction', () => {
   test('should apply and revert values', () => {
-    const store = writable(0);
+    const foo = undoState('foo', 0);
 
-    const action = new SetAction(store, 1, 'setAction');
+    const action = setAction(foo, 1, 'setAction');
     action.apply();
-    expect(get(store)).toBe(1);
+    expect(foo.value).toBe(1);
 
     action.revert();
-    expect(get(store)).toBe(0);
+    expect(foo.value).toBe(0);
 
     action.apply();
-    expect(get(store)).toBe(1);
+    expect(foo.value).toBe(1);
   });
 });

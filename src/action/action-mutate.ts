@@ -1,7 +1,7 @@
 import { UndoAction } from './action';
 import { enablePatches, enableMapSet, applyPatches } from 'immer';
 import type { Patch, Objectish } from 'immer';
-import type { Writable } from 'svelte/store';
+import { UndoState } from '../state.svelte';
 
 enablePatches();
 enableMapSet();
@@ -11,18 +11,22 @@ export type MutateActionPatch = {
   inversePatches: Patch[];
 };
 
-export class MutateAction<TValue extends Objectish, TMsg> extends UndoAction<
-  Writable<TValue>,
-  MutateActionPatch,
-  TMsg
-> {
-  apply() {
-    this.store.update((value) => applyPatches(value, this.patch.patches));
-  }
-
-  revert() {
-    this.store.update((value) =>
-      applyPatches(value, this.patch.inversePatches),
-    );
-  }
+export function mutateAction<TValue extends Objectish, TMsg>(
+  undoState: UndoState<TValue>,
+  patch: MutateActionPatch,
+  msg: TMsg,
+): UndoAction<TMsg> {
+  return {
+    type: 'mutate',
+    storeId: undoState.id,
+    msg,
+    seqNbr: 0,
+    patch,
+    apply() {
+      undoState.value = applyPatches(undoState.value, patch.patches);
+    },
+    revert() {
+      undoState.value = applyPatches(undoState.value, patch.inversePatches);
+    },
+  };
 }

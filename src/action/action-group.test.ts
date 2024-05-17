@@ -1,60 +1,60 @@
+import { undoState } from '../state.svelte';
 import { undoStack } from '../undo-stack.svelte';
-import { get, writable } from 'svelte/store';
-import { GroupAction } from './action-group';
-import { SetAction } from './action-set';
+import { groupAction } from './action-group';
+import { setAction } from './action-set';
 
 describe('MutateAction', () => {
   test('should apply and revert values', () => {
-    const store0 = writable(0);
-    const storeA = writable('a');
+    const foo0 = undoState('foo0', 0);
+    const fooA = undoState('fooA', 'a');
 
-    const action = new GroupAction('GroupAction');
-    action.push(new SetAction(store0, 1, undefined));
-    action.push(new SetAction(storeA, 'b', undefined));
+    const action = groupAction('GroupAction');
+    action.push(setAction(foo0, 1, undefined));
+    action.push(setAction(fooA, 'b', undefined));
     action.apply();
-    expect(get(store0)).toBe(1);
-    expect(get(storeA)).toBe('b');
+    expect(foo0.value).toBe(1);
+    expect(fooA.value).toBe('b');
 
     action.revert();
-    expect(get(store0)).toBe(0);
-    expect(get(storeA)).toBe('a');
+    expect(foo0.value).toBe(0);
+    expect(fooA.value).toBe('a');
 
     action.apply();
-    expect(get(store0)).toBe(1);
-    expect(get(storeA)).toBe('b');
+    expect(foo0.value).toBe(1);
+    expect(fooA.value).toBe('b');
   });
 
   test('should work with undoStack', () => {
     const undoStack1 = undoStack('created');
-    const store1 = writable(0);
-    const store2 = writable('a');
+    const foo1 = undoState('foo1', 0);
+    const foo2 = undoState('foo2', 'a');
 
-    let action = new GroupAction('GroupAction');
-    action.push(new SetAction(store1, 1, undefined));
-    action.push(new SetAction(store2, 'b', undefined));
-    action.push(new SetAction(store1, 2, undefined));
-    action.push(new SetAction(store2, 'c', undefined));
+    let action = groupAction('GroupAction');
+    action.push(setAction(foo1, 1, undefined));
+    action.push(setAction(foo2, 'b', undefined));
+    action.push(setAction(foo1, 2, undefined));
+    action.push(setAction(foo2, 'c', undefined));
     action.apply();
     undoStack1.push(action);
-    expect(get(store1)).toBe(2);
-    expect(get(store2)).toBe('c');
+    expect(foo1.value).toBe(2);
+    expect(foo2.value).toBe('c');
 
-    action = new GroupAction('GroupAction');
-    action.push(new SetAction(store2, 'd', undefined));
-    action.push(new SetAction(store1, 3, undefined));
-    action.push(new SetAction(store2, 'e', undefined));
-    action.push(new SetAction(store1, 4, undefined));
+    action = groupAction('GroupAction');
+    action.push(setAction(foo2, 'd', undefined));
+    action.push(setAction(foo1, 3, undefined));
+    action.push(setAction(foo2, 'e', undefined));
+    action.push(setAction(foo1, 4, undefined));
     action.apply();
     undoStack1.push(action);
-    expect(get(store1)).toBe(4);
-    expect(get(store2)).toBe('e');
+    expect(foo1.value).toBe(4);
+    expect(foo2.value).toBe('e');
 
     undoStack1.undo();
-    expect(get(store1)).toBe(2);
-    expect(get(store2)).toBe('c');
+    expect(foo1.value).toBe(2);
+    expect(foo2.value).toBe('c');
 
     undoStack1.redo();
-    expect(get(store1)).toBe(4);
-    expect(get(store2)).toBe('e');
+    expect(foo1.value).toBe(4);
+    expect(foo2.value).toBe('e');
   });
 });

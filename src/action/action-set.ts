@@ -1,19 +1,26 @@
-import type { Writable } from 'svelte/store';
+import { UndoState } from '../state.svelte';
 import { UndoAction } from './action';
 
-export class SetAction<TStore, TMsg> extends UndoAction<
-  Writable<TStore>,
-  TStore,
-  TMsg
-> {
-  apply() {
-    this.store.update((currValue) => {
-      [currValue, this._patch] = [this._patch, currValue];
-      return currValue;
-    });
+export function setAction<TValue, TMsg>(
+  undoState: UndoState<TValue>,
+  patch: TValue,
+  msg: TMsg,
+): UndoAction<TMsg> {
+  function apply() {
+    const tmpValue = undoState.value;
+    undoState.value = action.patch;
+    action.patch = tmpValue;
   }
 
-  revert() {
-    this.apply();
-  }
+  const action = {
+    type: 'set',
+    storeId: undoState.id,
+    msg,
+    seqNbr: 0,
+    patch,
+    apply,
+    revert: apply,
+  };
+
+  return action;
 }

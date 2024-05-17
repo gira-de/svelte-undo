@@ -1,26 +1,25 @@
-import type { ReadableUndoAction, UndoAction } from './action/action';
-import { get, writable } from 'svelte/store';
-import type { Readable } from 'svelte/store';
 import {
-  BarrierAction,
-  ErasedAction,
-  InitAction,
-} from './action/action-barrier';
+  isBarrierAction,
+  type ReadableUndoAction,
+  type UndoAction,
+} from './action/action';
+import { erasedAction } from './action/action-erased';
+import { initAction } from './action/action-init';
 import {
   loadActionsSnapshot,
   createSnapshotFromActions,
   type UndoActionSnapshot,
 } from './snapshot';
 
-type UndoStackData<TMsg> = {
-  actions: UndoAction<unknown, unknown, TMsg>[];
-  selectedAction: UndoAction<unknown, unknown, TMsg>;
+type WritableStackData<TMsg> = {
+  actions: UndoAction<TMsg>[];
+  selectedAction: UndoAction<TMsg>;
   canRedo: boolean;
   canUndo: boolean;
   index: number;
 };
 
-type ReadableUndoStackData<TMsg> = {
+type ReadableStackData<TMsg> = {
   /**
    * list of all actions that are currently on the undo stack
    */
@@ -49,11 +48,11 @@ type ReadableUndoStackData<TMsg> = {
   readonly index: number;
 };
 
-function newUndoStackData<TMsg>(
+function stackData<TMsg>(
   seqNbr: number,
   initActionMsg: TMsg,
-): UndoStackData<TMsg> {
-  const selectedAction = new InitAction(initActionMsg);
+): WritableStackData<TMsg> {
+  const selectedAction = initAction(initActionMsg);
   selectedAction.seqNbr = seqNbr;
   return {
     actions: [selectedAction],
@@ -69,19 +68,7 @@ export type UndoStackSnapshot<TMsg> = {
   index: number;
 };
 
-export interface ActionStack<TMsg> {
-  /**
-   * Removes all action above the selected actions (if their are any)
-   * and adds the specified action to the top of the stack. Selects the
-   * action. Does not call apply().
-   * @param action init, group, set or mutate action that should added to the stack
-   */
-  push: (action: UndoAction<unknown, unknown, TMsg>) => void;
-}
-
-export interface UndoStack<TMsg>
-  extends Readable<ReadableUndoStackData<TMsg>>,
-    ActionStack<TMsg> {
+export interface UndoStack<TMsg> extends ReadableStackData<TMsg> {
   /**
    * Reverts the selected action and selects the previous action.
    * Does nothing if there is no previous action.
@@ -102,6 +89,14 @@ export interface UndoStack<TMsg>
    * loaded.
    */
   goto: (seqNbr: number) => void;
+
+  /**
+   * Removes all action above the selected actions (if their are any)
+   * and adds the specified action to the top of the stack. Selects the
+   * action. Does not call apply().
+   * @param action init, group, set or mutate action that should added to the stack
+   */
+  push: (action: UndoAction<TMsg>) => void;
 
   /**
    * Erases all actions beginning with action of the specified seqNbr. Erased
@@ -137,7 +132,7 @@ export interface UndoStack<TMsg>
    * @param stores object that contains unique string keys for each store that is references by the undo stack
    * @returns snapshot object of the undo stack
    */
-  createSnapshot: (stores: Record<string, unknown>) => UndoStackSnapshot<TMsg>;
+  createSnapshot: () => UndoStackSnapshot<TMsg>;
 
   /**
    * Loads the snapshot that has previously been created with createSnapshot().
@@ -164,182 +159,154 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     return ++highestSeqNbr;
   }
 
-  const store = writable(newUndoStackData(nextSeqNbr(), initActionMsg));
+  let undoStackData = $state(stackData(nextSeqNbr(), initActionMsg));
 
-  function push(action: UndoAction<unknown, unknown, TMsg>) {
-    store.update((undoStack) => {
-      const deleteCount = undoStack.actions.length - undoStack.index - 1;
-      action.seqNbr = nextSeqNbr();
-      undoStack.actions.splice(undoStack.index + 1, deleteCount, action);
-      undoStack.index = undoStack.actions.length - 1;
-      undoStack.selectedAction = action;
-      undoStack.canUndo = !(action instanceof BarrierAction);
-      undoStack.canRedo = false;
-      return undoStack;
-    });
+  function push(action: UndoAction<TMsg>) {
+    const deleteCount = undoStackData.actions.length - undoStackData.index - 1;
+    action.seqNbr = nextSeqNbr();
+    undoStackData.actions.splice(undoStackData.index + 1, deleteCount, action);
+    undoStackData.index = undoStackData.actions.length - 1;
+    undoStackData.selectedAction = action;
+    undoStackData.canUndo = !isBarrierAction(action);
+    undoStackData.canRedo = false;
   }
 
   function undo() {
-    store.update((undoStack) => {
-      if (
-        undoStack.index <= 0 ||
-        undoStack.selectedAction instanceof BarrierAction
-      ) {
-        return undoStack;
-      }
+    if (
+      undoStackData.index <= 0 ||
+      isBarrierAction(undoStackData.selectedAction)
+    ) {
+      return;
+    }
 
-      undoStack.actions[undoStack.index].revert();
-      undoStack.index--;
-      undoStack.selectedAction = undoStack.actions[undoStack.index];
-      undoStack.canUndo =
-        undoStack.index > 0 &&
-        !(undoStack.selectedAction instanceof BarrierAction);
-      undoStack.canRedo = true;
-      return undoStack;
-    });
+    undoStackData.selectedAction.revert();
+    undoStackData.index--;
+    undoStackData.selectedAction = undoStackData.actions[undoStackData.index];
+    undoStackData.canUndo =
+      undoStackData.index > 0 && !isBarrierAction(undoStackData.selectedAction);
+    undoStackData.canRedo = true;
   }
 
   function redo() {
-    store.update((undoStack) => {
-      if (
-        undoStack.index >= undoStack.actions.length - 1 ||
-        undoStack.actions[undoStack.index + 1] instanceof BarrierAction
-      ) {
-        return undoStack;
-      }
+    if (
+      undoStackData.index >= undoStackData.actions.length - 1 ||
+      isBarrierAction(undoStackData.actions[undoStackData.index + 1])
+    ) {
+      return;
+    }
 
-      undoStack.index++;
-      undoStack.actions[undoStack.index].apply();
-      undoStack.canUndo = true;
-      undoStack.canRedo =
-        undoStack.index < undoStack.actions.length - 1 &&
-        !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
-      undoStack.selectedAction = undoStack.actions[undoStack.index];
-      return undoStack;
-    });
+    undoStackData.actions[undoStackData.index + 1].apply();
+    undoStackData.index++;
+    undoStackData.selectedAction = undoStackData.actions[undoStackData.index];
+    undoStackData.canUndo = true;
+    undoStackData.canRedo =
+      undoStackData.index < undoStackData.actions.length - 1 &&
+      !isBarrierAction(undoStackData.actions[undoStackData.index + 1]);
   }
 
   function goto(seqNbr: number) {
-    store.update((undoStack) => {
-      const targetIndex = undoStack.actions.findIndex(
-        (a) => a.seqNbr === seqNbr,
-      );
-      if (targetIndex < 0) {
-        return undoStack;
-      }
+    const targetIndex = undoStackData.actions.findIndex(
+      (a) => a.seqNbr === seqNbr,
+    );
+    if (targetIndex < 0) {
+      return;
+    }
 
-      if (targetIndex === undoStack.index) {
-        return undoStack;
-      }
+    if (targetIndex === undoStackData.index) {
+      return;
+    }
 
-      for (let i = undoStack.index; targetIndex < i; i--) {
-        if (undoStack.actions[i] instanceof BarrierAction) {
-          return undoStack;
-        }
+    for (let i = undoStackData.index; targetIndex < i; i--) {
+      if (isBarrierAction(undoStackData.actions[i])) {
+        return;
       }
+    }
 
-      for (let i = undoStack.index + 1; targetIndex >= i; i++) {
-        if (undoStack.actions[i] instanceof BarrierAction) {
-          return undoStack;
-        }
+    for (let i = undoStackData.index + 1; targetIndex >= i; i++) {
+      if (isBarrierAction(undoStackData.actions[i])) {
+        return;
       }
+    }
 
-      for (; targetIndex < undoStack.index; undoStack.index--) {
-        undoStack.actions[undoStack.index].revert();
-      }
+    for (; targetIndex < undoStackData.index; undoStackData.index--) {
+      undoStackData.actions[undoStackData.index].revert();
+    }
 
-      for (; targetIndex > undoStack.index; undoStack.index++) {
-        undoStack.actions[undoStack.index + 1].apply();
-      }
+    for (; targetIndex > undoStackData.index; undoStackData.index++) {
+      undoStackData.actions[undoStackData.index + 1].apply();
+    }
 
-      undoStack.selectedAction = undoStack.actions[undoStack.index];
-      undoStack.canUndo =
-        undoStack.index > 0 &&
-        !(undoStack.selectedAction instanceof BarrierAction);
-      undoStack.canRedo =
-        undoStack.index < undoStack.actions.length - 1 &&
-        !(undoStack.actions[undoStack.index + 1] instanceof BarrierAction);
-      return undoStack;
-    });
+    undoStackData.selectedAction = undoStackData.actions[undoStackData.index];
+    undoStackData.canUndo =
+      undoStackData.index > 0 && !isBarrierAction(undoStackData.selectedAction);
+    undoStackData.canRedo =
+      undoStackData.index < undoStackData.actions.length - 1 &&
+      !isBarrierAction(undoStackData.actions[undoStackData.index + 1]);
   }
 
   function erase(seqNbr?: number) {
-    store.update((undoStack) => {
-      // get top start index
-      const startIndex =
-        seqNbr === undefined
-          ? undoStack.actions.length - 1
-          : undoStack.actions.findIndex((a) => a.seqNbr === seqNbr);
-      if (startIndex < 0) {
-        return undoStack;
+    // get top start index
+    const startIndex =
+      seqNbr === undefined
+        ? undoStackData.actions.length - 1
+        : undoStackData.actions.findIndex((a) => a.seqNbr === seqNbr);
+    if (startIndex < 0) {
+      return;
+    }
+
+    // cancel if unapplied action should be erased
+    if (undoStackData.index < startIndex) {
+      return;
+    }
+
+    // erase actions
+    for (let i = startIndex; i > 0; i--) {
+      const action = undoStackData.actions[i];
+      if (isBarrierAction(action)) {
+        break;
       }
 
-      // cancel if unapplied action should be erased
-      if (undoStack.index < startIndex) {
-        return undoStack;
-      }
+      const newAction = erasedAction(action.msg);
+      newAction.seqNbr = action.seqNbr;
+      undoStackData.actions[i] = newAction;
+    }
 
-      // erase actions
-      for (let i = startIndex; i > 0; i--) {
-        const action = undoStack.actions[i];
-        if (action instanceof BarrierAction) {
-          break;
-        }
-
-        const erasedAction = new ErasedAction(action.msg);
-        erasedAction.seqNbr = action.seqNbr;
-        undoStack.actions[i] = erasedAction;
-      }
-
-      undoStack.selectedAction = undoStack.actions[undoStack.index];
-      undoStack.canUndo =
-        undoStack.index > 0 &&
-        !(undoStack.selectedAction instanceof BarrierAction);
-      return undoStack;
-    });
+    undoStackData.selectedAction = undoStackData.actions[undoStackData.index];
+    undoStackData.canUndo =
+      undoStackData.index > 0 && !isBarrierAction(undoStackData.selectedAction);
   }
 
   function clear() {
-    store.set(newUndoStackData(nextSeqNbr(), initActionMsg));
+    undoStackData = stackData(nextSeqNbr(), initActionMsg);
   }
 
   function clearUndo() {
-    store.update((undoStack) => {
-      if (undoStack.index === 0) {
-        return undoStack;
-      }
+    if (undoStackData.index === 0) {
+      return;
+    }
 
-      undoStack.actions.splice(0, undoStack.index);
-      undoStack.index = 0;
-      undoStack.canUndo = false;
-      const firstAction = new ErasedAction(undoStack.actions[0].msg);
-      firstAction.seqNbr = undoStack.actions[0].seqNbr;
-      undoStack.actions[0] = firstAction;
-      undoStack.selectedAction = firstAction;
-      return undoStack;
-    });
+    undoStackData.actions.splice(0, undoStackData.index);
+    undoStackData.index = 0;
+    undoStackData.canUndo = false;
+    const firstAction = erasedAction(undoStackData.actions[0].msg);
+    firstAction.seqNbr = undoStackData.actions[0].seqNbr;
+    undoStackData.actions[0] = firstAction;
+    undoStackData.selectedAction = firstAction;
   }
 
   function clearRedo() {
-    store.update((undoStack) => {
-      if (undoStack.index === undoStack.actions.length - 1) {
-        return undoStack;
-      }
+    if (undoStackData.index === undoStackData.actions.length - 1) {
+      return;
+    }
 
-      undoStack.actions.splice(undoStack.index + 1);
-      undoStack.canRedo = false;
-      return undoStack;
-    });
+    undoStackData.actions.splice(undoStackData.index + 1);
+    undoStackData.canRedo = false;
   }
 
-  function createSnapshot(
-    stores: Record<string, unknown>,
-  ): UndoStackSnapshot<TMsg> {
-    const undoStack = get(store);
-
+  function createSnapshot(): UndoStackSnapshot<TMsg> {
     return {
-      actions: createSnapshotFromActions(undoStack.actions, stores),
-      index: undoStack.index,
+      actions: createSnapshotFromActions(undoStackData.actions),
+      index: undoStackData.index,
     };
   }
 
@@ -350,17 +317,16 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     const actions = loadActionsSnapshot(undoStackSnapshot.actions, stores);
     actions.forEach((a) => (a.seqNbr = nextSeqNbr()));
 
-    store.set({
+    undoStackData = {
       actions,
       selectedAction: actions[undoStackSnapshot.index],
       canRedo: undoStackSnapshot.index < undoStackSnapshot.actions.length - 1,
       canUndo: undoStackSnapshot.index > 0,
       index: undoStackSnapshot.index,
-    });
+    };
   }
 
   return {
-    subscribe: store.subscribe,
     push,
     undo,
     redo,
@@ -371,5 +337,20 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
     clearRedo,
     createSnapshot,
     loadSnapshot,
+    get actions() {
+      return undoStackData.actions;
+    },
+    get selectedAction() {
+      return undoStackData.selectedAction;
+    },
+    get canRedo() {
+      return undoStackData.canRedo;
+    },
+    get canUndo() {
+      return undoStackData.canUndo;
+    },
+    get index() {
+      return undoStackData.index;
+    },
   };
 }

@@ -67,7 +67,7 @@ const personStore = writable({ name: 'John', age: '23' });
 
 // create undo stack and a transaction controller
 const myUndoStack = undoStack('created');
-const myTransactionCtrl = transactionCtrl(myUndoStack);
+const myTransactionCtrl = transactionCtrl(myUndoStack.push);
 
 // apply model changes on the draft state
 let personDraft = myTransactionCtrl.draft(personStore);
@@ -91,7 +91,7 @@ import { undoStack, transactionCtrl } from '@gira-de/svelte-undo';
 
 // push an undo step to the undo stack
 const myUndoStack = undoStack('created');
-const myTransactionCtrl = transactionCtrl(myUndoStack);
+const myTransactionCtrl = transactionCtrl(myUndoStack.push);
 const personStore = writable({ name: 'John', age: '23' });
 myTransactionCtrl.draft(personStore)['age'] = 24;
 myTransactionCtrl.commit('happy birthday');
@@ -190,7 +190,7 @@ The _undoStack_ is basically a Svelte store with various properties and function
 
 #### Instantiation
 
-`const myTransactionCtrl = transactionCtrl(myUndoStack);`
+`const myTransactionCtrl = transactionCtrl(myUndoStack.push);`
 
 #### Functions
 
