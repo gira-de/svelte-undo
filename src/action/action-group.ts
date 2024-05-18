@@ -1,9 +1,9 @@
-import { UndoAction } from './action';
+import type { HistoryAction } from './action';
 
-export function groupAction<TMsg>(msg: TMsg): UndoAction<TMsg> & {
-  push(action: UndoAction<undefined>): void;
+export function createGroupAction<TMsg>(msg: TMsg): HistoryAction<TMsg> & {
+  push(action: HistoryAction<undefined>): void;
 } {
-  const patch: UndoAction<undefined>[] = [];
+  const patch: HistoryAction<undefined>[] = [];
 
   return {
     type: 'group',

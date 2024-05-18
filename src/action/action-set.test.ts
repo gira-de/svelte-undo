@@ -1,11 +1,11 @@
-import { undoState } from '../state.svelte';
-import { setAction } from './action-set';
+import { undoable } from '../state.svelte';
+import { createSetAction } from './action-set';
 
 describe('SetAction', () => {
   test('should apply and revert values', () => {
-    const foo = undoState('foo', 0);
+    const foo = undoable('foo', 0);
 
-    const action = setAction(foo, 1, 'setAction');
+    const action = createSetAction(foo, 1, 'setAction');
     action.apply();
     expect(foo.value).toBe(1);
 

@@ -1,11 +1,11 @@
-import { undoState } from '../state.svelte';
-import type { ReadableUndoAction } from './action';
-import { setAction } from './action-set';
+import { undoable } from '../state.svelte';
+import type { ReadableHistoryAction } from './action';
+import { createSetAction } from './action-set';
 
-describe('UndoAction properties', () => {
+describe('HistoryAction properties', () => {
   test('should should be readonly', () => {
-    const action = setAction(undoState('foo', 0), undefined, 'set action');
-    const readableAction: ReadableUndoAction<string> = action;
+    const action = createSetAction(undoable('foo', 0), undefined, 'set action');
+    const readableAction: ReadableHistoryAction<string> = action;
 
     // @ts-expect-error type should be readonly
     readableAction.type = 'bar';

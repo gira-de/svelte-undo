@@ -1,15 +1,10 @@
-import { barrierAction, UndoAction } from './action';
+import type { HistoryAction } from './action';
+import { createBarrierAction } from './action-barrier';
 
-export function erasedAction<TMsg>(msg: TMsg): UndoAction<TMsg> {
-  return barrierAction({
+export function createErasedAction<TMsg>(msg: TMsg): HistoryAction<TMsg> {
+  return createBarrierAction({
     type: 'erased',
     msg,
     seqNbr: 0,
-    apply() {
-      throw new Error('erased action can not be applied');
-    },
-    revert() {
-      throw new Error('erased action can not be reverted');
-    },
   });
 }

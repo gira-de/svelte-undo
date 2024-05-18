@@ -1,19 +1,19 @@
 import { createDraft, finishDraft } from 'immer';
 import type { Patch, Objectish } from 'immer';
-import { UndoState } from './state.svelte';
-import { mutateAction } from './action/action-mutate';
-import { groupAction } from './action/action-group';
-import { UndoAction } from './action/action';
+import type { Undoable } from './state.svelte';
+import { createMutateAction } from './action/action-mutate';
+import { createGroupAction } from './action/action-group';
+import type { HistoryAction } from './action/action';
 
-export interface TransactionCtrl<TMsg> {
+export interface Transaction<TMsg> {
   /**
-   * Returns the draft state for the specified store.
-   * The draft can then be edited without changing the store value.
-   * The changes will be applied to the store when commit() is called.
+   * Returns the draft object for the specified state.
+   * The draft can then be edited without changing the state.
+   * The changes will be applied to the state when commit() is called.
    *
-   * @param store the store for which the draft state should be created
+   * @param undoable the state for which the draft object should be created
    */
-  draft<TData extends Objectish>(store: UndoState<TData>): TData;
+  draft<TData extends Objectish>(undoable: Undoable<TData>): TData;
 
   /**
    * Applies the changes of the draft state(s) to the stores and adds
@@ -39,20 +39,19 @@ export interface TransactionCtrl<TMsg> {
  *
  * Only one transaction controller per undo stack is allowed.
  *
- * @param pushFunc function that should the called to push new items on the undo stack. Normally undoStack.push
+ * @param pushFunc function that should the called to push new items on the undo stack. Normally historyStack.push
  * @returns instance of a transaction controller
  */
-export function transactionCtrl<TMsg>(
-  pushFunc: (action: UndoAction<TMsg>) => void,
-): TransactionCtrl<TMsg> {
-  const draftValues: Map<UndoState<Objectish>, Objectish> = new Map();
+export function createTransaction<TMsg>(
+  pushFunc: (action: HistoryAction<TMsg>) => void,
+): Transaction<TMsg> {
+  const draftValues: Map<Undoable<Objectish>, Objectish> = new Map();
 
-  function draft<TData extends Objectish>(store: UndoState<TData>) {
-    let draftValue = draftValues.get(store);
+  function draft<TData extends Objectish>(undoable: Undoable<TData>) {
+    let draftValue = draftValues.get(undoable);
     if (draftValue === undefined) {
-      const storeValue = store.value;
-      draftValue = createDraft(storeValue);
-      draftValues.set(store, draftValue);
+      draftValue = createDraft(undoable.value);
+      draftValues.set(undoable, draftValue);
     }
     return draftValue as TData;
   }
@@ -78,14 +77,18 @@ export function transactionCtrl<TMsg>(
 
     if (storeUpdates.length === 1) {
       const storeUpdate = storeUpdates[0];
-      const action = mutateAction(storeUpdate.store, storeUpdate.patch, msg);
+      const action = createMutateAction(
+        storeUpdate.store,
+        storeUpdate.patch,
+        msg,
+      );
       storeUpdate.store.value = storeUpdate.newValue;
       pushFunc(action);
     } else if (storeUpdates.length > 1) {
-      const action = groupAction<TMsg>(msg);
+      const action = createGroupAction<TMsg>(msg);
       for (const storeUpdate of storeUpdates) {
         action.push(
-          mutateAction(storeUpdate.store, storeUpdate.patch, undefined),
+          createMutateAction(storeUpdate.store, storeUpdate.patch, undefined),
         );
         storeUpdate.store.value = storeUpdate.newValue;
       }

@@ -1,93 +1,100 @@
-import { isBarrierAction, type UndoAction } from './action/action';
+import type { HistoryAction } from './action/action';
 import type { Objectish } from 'immer';
-import { UndoState } from './state.svelte';
-import { setAction } from './action/action-set';
-import { MutateActionPatch, mutateAction } from './action/action-mutate';
-import { groupAction } from './action/action-group';
-import { initAction } from './action/action-init';
-import { erasedAction } from './action/action-erased';
+import type { Undoable } from './state.svelte';
+import { createSetAction } from './action/action-set';
+import {
+  type MutateActionPatch,
+  createMutateAction,
+} from './action/action-mutate';
+import { createGroupAction } from './action/action-group';
+import { createInitAction } from './action/action-init';
+import { createErasedAction } from './action/action-erased';
+import { isBarrierAction } from './action/action-barrier';
 
-export type UndoActionSnapshot<TMsg> = {
+export type HistorySnapshot<TMsg> = {
+  actions: SnapshotAction<TMsg>[];
+  index: number;
+};
+
+export type SnapshotAction<TMsg> = {
   type: string;
   storeId?: string;
   msg: TMsg;
   data?: unknown;
 };
 
-export function loadActionsSnapshot<TMsg>(
-  actionsSnapshot: UndoActionSnapshot<TMsg>[],
+export function loadSnapshotActions<TMsg>(
+  snapshotActions: SnapshotAction<TMsg>[],
   stores: Record<string, unknown>,
 ) {
-  const stackedActions: UndoAction<TMsg>[] = [];
+  const historyActions: HistoryAction<TMsg>[] = [];
 
-  for (const actionSnapshot of actionsSnapshot) {
-    const action = loadActionSnapshot(actionSnapshot);
-    stackedActions.push(action);
+  for (const snapshotAction of snapshotActions) {
+    const action = loadSnapshotAction(snapshotAction);
+    historyActions.push(action);
   }
 
-  function loadActionSnapshot<TMsg>(
-    actionSnapshot: UndoActionSnapshot<TMsg>,
-  ): UndoAction<TMsg> {
-    if (actionSnapshot.type === 'group') {
-      const actionsSnapshot =
-        actionSnapshot.data as UndoActionSnapshot<undefined>[];
-      const newGroupAction = groupAction(actionSnapshot.msg);
-      for (const actionSnapshot of actionsSnapshot) {
-        newGroupAction.push(loadActionSnapshot(actionSnapshot));
+  function loadSnapshotAction<TMsg>(
+    snapshotAction: SnapshotAction<TMsg>,
+  ): HistoryAction<TMsg> {
+    if (snapshotAction.type === 'group') {
+      const snapshotActions =
+        snapshotAction.data as SnapshotAction<undefined>[];
+      const newGroupAction = createGroupAction(snapshotAction.msg);
+      for (const snapshotAction of snapshotActions) {
+        newGroupAction.push(loadSnapshotAction(snapshotAction));
       }
       return newGroupAction;
     }
 
-    if (actionSnapshot.type === 'init') {
-      return initAction(actionSnapshot.msg);
+    if (snapshotAction.type === 'init') {
+      return createInitAction(snapshotAction.msg);
     }
 
-    if (actionSnapshot.type === 'erased') {
-      return erasedAction(actionSnapshot.msg);
+    if (snapshotAction.type === 'erased') {
+      return createErasedAction(snapshotAction.msg);
     }
 
-    if (!actionSnapshot.storeId) {
+    if (!snapshotAction.storeId) {
       throw new Error('missing storeId');
     }
 
-    if (actionSnapshot.type === 'set') {
-      return setAction(
-        stores[actionSnapshot.storeId] as UndoState<unknown>,
-        actionSnapshot.data,
-        actionSnapshot.msg,
+    if (snapshotAction.type === 'set') {
+      return createSetAction(
+        stores[snapshotAction.storeId] as Undoable<unknown>,
+        snapshotAction.data,
+        snapshotAction.msg,
       );
-    } else if (actionSnapshot.type === 'mutate') {
-      return mutateAction(
-        stores[actionSnapshot.storeId] as UndoState<Objectish>,
-        actionSnapshot.data as MutateActionPatch,
-        actionSnapshot.msg,
+    } else if (snapshotAction.type === 'mutate') {
+      return createMutateAction(
+        stores[snapshotAction.storeId] as Undoable<Objectish>,
+        snapshotAction.data as MutateActionPatch,
+        snapshotAction.msg,
       );
     }
 
-    throw new Error(`invalid action type '${actionSnapshot.type}'`);
+    throw new Error(`invalid action type '${snapshotAction.type}'`);
   }
 
-  return stackedActions;
+  return historyActions;
 }
 
-export function createSnapshotFromActions<TMsg>(actions: UndoAction<TMsg>[]) {
-  return createSnapshot(actions);
-}
-
-function createSnapshot<TMsg>(actions: UndoAction<TMsg>[]) {
-  const actionSnapshots: UndoActionSnapshot<TMsg>[] = [];
+export function createSnapshotActions<TMsg>(
+  actions: HistoryAction<TMsg>[],
+): SnapshotAction<TMsg>[] {
+  const snapshotActions: SnapshotAction<TMsg>[] = [];
 
   for (const action of actions) {
     let data: unknown;
     if (isBarrierAction(action)) {
       data = undefined;
     } else if (Array.isArray(action.patch)) {
-      data = createSnapshot(action.patch as UndoAction<TMsg>[]);
+      data = createSnapshotActions(action.patch as HistoryAction<TMsg>[]);
     } else {
       data = action.patch;
     }
 
-    actionSnapshots.push({
+    snapshotActions.push({
       type: action.type,
       storeId: action.storeId,
       msg: action.msg,
@@ -95,5 +102,5 @@ function createSnapshot<TMsg>(actions: UndoAction<TMsg>[]) {
     });
   }
 
-  return actionSnapshots;
+  return snapshotActions;
 }

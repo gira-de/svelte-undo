@@ -1,9 +1,9 @@
-export interface UndoState<T> {
+export interface Undoable<T> {
   id: string;
   value: T;
 }
 
-export function undoState<T>(id: string, value: T): UndoState<T> {
+export function undoable<T>(id: string, value: T): Undoable<T> {
   let stateValue = $state.frozen(value);
 
   return {

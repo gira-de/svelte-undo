@@ -1,40 +1,50 @@
-import { erasedAction } from './action/action-erased';
-import { groupAction } from './action/action-group';
-import { initAction } from './action/action-init';
-import { MutateActionPatch, mutateAction } from './action/action-mutate';
-import { setAction } from './action/action-set';
-import { loadActionsSnapshot, createSnapshotFromActions } from './snapshot';
-import { undoState } from './state.svelte';
+import { isBarrierAction } from './action/action-barrier';
+import { createErasedAction } from './action/action-erased';
+import { createGroupAction } from './action/action-group';
+import { createInitAction } from './action/action-init';
+import {
+  type MutateActionPatch,
+  createMutateAction,
+} from './action/action-mutate';
+import { createSetAction } from './action/action-set';
+import { loadSnapshotActions, createSnapshotActions } from './snapshot';
+import { undoable } from './state.svelte';
 
-describe('loadActionsSnapshot', () => {
+describe('loadSnapshotActions', () => {
   test('should load init-action', () => {
-    const initActionSnapshot = {
+    const initSnapshotAction = {
       type: 'init',
       msg: 'InitAction',
     };
 
-    const undoActions = loadActionsSnapshot([initActionSnapshot], {});
-    expect(undoActions).toHaveLength(1);
-    expect(undoActions[0].type).toBe('init');
-    expect(undoActions[0].storeId).toBeUndefined();
-    expect(undoActions[0].msg).toBe('InitAction');
+    const actions = loadSnapshotActions([initSnapshotAction], {});
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('init');
+    expect(actions[0].storeId).toBeUndefined();
+    expect(actions[0].msg).toBe('InitAction');
+    expect(isBarrierAction(actions[0])).toBe(true);
+    expect(() => actions[0].apply()).toThrow();
+    expect(() => actions[0].revert()).toThrow();
   });
 
   test('should load erased-action', () => {
-    const erasedActionSnapshot = {
+    const erasedSnapshotAction = {
       type: 'erased',
       msg: 'ErasedAction',
     };
 
-    const undoActions = loadActionsSnapshot([erasedActionSnapshot], {});
-    expect(undoActions).toHaveLength(1);
-    expect(undoActions[0].type).toBe('erased');
-    expect(undoActions[0].storeId).toBeUndefined();
-    expect(undoActions[0].msg).toBe('ErasedAction');
+    const actions = loadSnapshotActions([erasedSnapshotAction], {});
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('erased');
+    expect(actions[0].storeId).toBeUndefined();
+    expect(actions[0].msg).toBe('ErasedAction');
+    expect(isBarrierAction(actions[0])).toBe(true);
+    expect(() => actions[0].apply()).toThrow();
+    expect(() => actions[0].revert()).toThrow();
   });
 
   test('should load group-action', () => {
-    const groupActionSnapshot = {
+    const groupSnapshotAction = {
       type: 'group',
       msg: 'GroupAction',
       data: [
@@ -47,49 +57,49 @@ describe('loadActionsSnapshot', () => {
       ],
     };
 
-    const store1 = undoState('foo1', 0);
+    const hState1 = undoable('foo1', 0);
 
-    const undoActions = loadActionsSnapshot([groupActionSnapshot], {
-      foo1: store1,
+    const actions = loadSnapshotActions([groupSnapshotAction], {
+      foo1: hState1,
     });
-    expect(undoActions).toHaveLength(1);
-    expect(undoActions[0].type).toBe('group');
-    expect(undoActions[0].storeId).toBeUndefined();
-    expect(undoActions[0].msg).toBe('GroupAction');
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('group');
+    expect(actions[0].storeId).toBeUndefined();
+    expect(actions[0].msg).toBe('GroupAction');
 
-    undoActions[0].apply();
-    expect(store1.value).toBe(1);
+    actions[0].apply();
+    expect(hState1.value).toBe(1);
 
-    undoActions[0].revert();
-    expect(store1.value).toBe(0);
+    actions[0].revert();
+    expect(hState1.value).toBe(0);
   });
 
   test('should load set-action', () => {
-    const setActionSnapshot = {
+    const setSnapshotAction = {
       type: 'set',
       storeId: 'foo1',
       msg: 'SetAction',
       data: 1,
     };
-    const store1 = undoState('foo1', 0);
+    const hState1 = undoable('foo1', 0);
 
-    const undoActions = loadActionsSnapshot([setActionSnapshot], {
-      foo1: store1,
+    const actions = loadSnapshotActions([setSnapshotAction], {
+      foo1: hState1,
     });
-    expect(undoActions).toHaveLength(1);
-    expect(undoActions[0].type).toBe('set');
-    expect(undoActions[0].storeId).toBe(store1.id);
-    expect(undoActions[0].msg).toBe('SetAction');
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('set');
+    expect(actions[0].storeId).toBe(hState1.id);
+    expect(actions[0].msg).toBe('SetAction');
 
-    undoActions[0].apply();
-    expect(store1.value).toBe(1);
+    actions[0].apply();
+    expect(hState1.value).toBe(1);
 
-    undoActions[0].revert();
-    expect(store1.value).toBe(0);
+    actions[0].revert();
+    expect(hState1.value).toBe(0);
   });
 
   test('should load mutate-action', () => {
-    const mutateActionSnapshot = {
+    const mutateSnapshotAction = {
       type: 'mutate',
       storeId: 'foo1',
       msg: 'MutateAction',
@@ -98,38 +108,38 @@ describe('loadActionsSnapshot', () => {
         inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
       },
     };
-    const store1 = undoState('foo1', { value: 0 });
+    const hState1 = undoable('foo1', { value: 0 });
 
-    const undoActions = loadActionsSnapshot([mutateActionSnapshot], {
-      foo1: store1,
+    const actions = loadSnapshotActions([mutateSnapshotAction], {
+      foo1: hState1,
     });
-    expect(undoActions).toHaveLength(1);
-    expect(undoActions[0].type).toBe('mutate');
-    expect(undoActions[0].storeId).toBe(store1.id);
-    expect(undoActions[0].msg).toBe('MutateAction');
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('mutate');
+    expect(actions[0].storeId).toBe(hState1.id);
+    expect(actions[0].msg).toBe('MutateAction');
 
-    undoActions[0].apply();
-    expect(store1.value).toEqual({ value: 1 });
+    actions[0].apply();
+    expect(hState1.value).toEqual({ value: 1 });
 
-    undoActions[0].revert();
-    expect(store1.value).toEqual({ value: 0 });
+    actions[0].revert();
+    expect(hState1.value).toEqual({ value: 0 });
   });
 
   test('should throw if set-actin does not contain a store id', () => {
-    const setActionSnapshot = {
+    const setSnapshotAction = {
       type: 'set',
       msg: 'SetAction',
       data: 1,
     };
-    const store1 = undoState('foo1', 0);
+    const hState1 = undoable('foo1', 0);
 
     expect(() =>
-      loadActionsSnapshot([setActionSnapshot], { store1 }),
+      loadSnapshotActions([setSnapshotAction], { hState1 }),
     ).toThrow();
   });
 
-  test('should throw if mutate-actin does not contain a store id', () => {
-    const mutateActionSnapshot = {
+  test('should throw if mutate-action does not contain a store id', () => {
+    const mutateSnapshotAction = {
       type: 'mutate',
       msg: 'MutateAction',
       data: {
@@ -137,52 +147,52 @@ describe('loadActionsSnapshot', () => {
         inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
       },
     };
-    const store1 = undoState('foo1', { value: 0 });
+    const hState1 = undoable('foo1', { value: 0 });
 
     expect(() =>
-      loadActionsSnapshot([mutateActionSnapshot], { store1 }),
+      loadSnapshotActions([mutateSnapshotAction], { hState1 }),
     ).toThrow();
   });
 
   test('should throw if action type id is unknown', () => {
-    const fooActionSnapshot = {
+    const fooSnapshotAction = {
       type: 'foo',
       storeId: 'foo1',
       msg: 'FooAction',
     };
-    const store1 = undoState('foo1', 0);
+    const hState1 = undoable('foo1', 0);
 
     expect(() =>
-      loadActionsSnapshot([fooActionSnapshot], { store1 }),
+      loadSnapshotActions([fooSnapshotAction], { hState1 }),
     ).toThrow();
   });
 });
 
-describe('createSnapshotFromActions', () => {
+describe('createSnapshotActions', () => {
   test('should create a snapshot of an init-action', () => {
-    const initAction1 = initAction('InitAction');
+    const initAction1 = createInitAction('InitAction');
 
-    const actionsSnapshot = createSnapshotFromActions([initAction1]);
+    const actions = createSnapshotActions([initAction1]);
 
-    expect(actionsSnapshot).toEqual([{ type: 'init', msg: 'InitAction' }]);
+    expect(actions).toEqual([{ type: 'init', msg: 'InitAction' }]);
   });
 
   test('should create a snapshot of an erase-action', () => {
-    const erasedAction1 = erasedAction('ErasedAction');
+    const erasedAction1 = createErasedAction('ErasedAction');
 
-    const actionsSnapshot = createSnapshotFromActions([erasedAction1]);
+    const actions = createSnapshotActions([erasedAction1]);
 
-    expect(actionsSnapshot).toEqual([{ type: 'erased', msg: 'ErasedAction' }]);
+    expect(actions).toEqual([{ type: 'erased', msg: 'ErasedAction' }]);
   });
 
   test('should create a snapshot of a group-action', () => {
-    const groupAction1 = groupAction('GroupAction');
-    const store1 = undoState('foo1', 0);
-    groupAction1.push(setAction(store1, 1, undefined));
+    const groupAction1 = createGroupAction('GroupAction');
+    const hState1 = undoable('foo1', 0);
+    groupAction1.push(createSetAction(hState1, 1, undefined));
 
-    const actionsSnapshot = createSnapshotFromActions([groupAction1]);
+    const actions = createSnapshotActions([groupAction1]);
 
-    expect(actionsSnapshot).toEqual([
+    expect(actions).toEqual([
       {
         type: 'group',
         msg: 'GroupAction',
@@ -192,12 +202,12 @@ describe('createSnapshotFromActions', () => {
   });
 
   test('should create a snapshot of a set-action', () => {
-    const store1 = undoState('foo1', 0);
+    const hState1 = undoable('foo1', 0);
+    const setAction1 = createSetAction(hState1, 1, 'SetAction');
 
-    const setAction1 = setAction(store1, 1, 'SetAction');
-    const actionsSnapshot = createSnapshotFromActions([setAction1]);
+    const actions = createSnapshotActions([setAction1]);
 
-    expect(actionsSnapshot).toEqual([
+    expect(actions).toEqual([
       {
         type: 'set',
         storeId: 'foo1',
@@ -208,15 +218,16 @@ describe('createSnapshotFromActions', () => {
   });
 
   test('should create a snapshot of a mutate-action', () => {
-    const store1 = undoState('foo1', { value: 0 });
+    const hState1 = undoable('foo1', { value: 0 });
     const patch: MutateActionPatch = {
       patches: [{ op: 'replace', path: ['value'], value: 1 }],
       inversePatches: [{ op: 'replace', path: ['value'], value: 0 }],
     };
-    const mutateAction1 = mutateAction(store1, patch, 'MutateAction');
-    const actionsSnapshot = createSnapshotFromActions([mutateAction1]);
+    const mutateAction1 = createMutateAction(hState1, patch, 'MutateAction');
 
-    expect(actionsSnapshot).toEqual([
+    const actions = createSnapshotActions([mutateAction1]);
+
+    expect(actions).toEqual([
       {
         type: 'mutate',
         storeId: 'foo1',
@@ -227,15 +238,15 @@ describe('createSnapshotFromActions', () => {
   });
 
   test('should create a snapshot of multiple actions', () => {
-    const store1 = undoState('foo1', 0);
-    const setAction1 = setAction(store1, 1, 'SetAction');
+    const hState1 = undoable('foo1', 0);
+    const setAction1 = createSetAction(hState1, 1, 'SetAction');
 
-    const store2 = undoState('foo2', 'hello');
-    const setAction2 = setAction(store2, 'world', 'SetAction');
+    const hState2 = undoable('foo2', 'hello');
+    const setAction2 = createSetAction(hState2, 'world', 'SetAction');
 
-    const actionsSnapshot = createSnapshotFromActions([setAction1, setAction2]);
+    const actions = createSnapshotActions([setAction1, setAction2]);
 
-    expect(actionsSnapshot).toEqual([
+    expect(actions).toEqual([
       {
         type: 'set',
         storeId: 'foo1',

@@ -1,74 +1,65 @@
-import { undoStack } from './undo-stack.svelte';
-import { transactionCtrl } from './transaction';
-import { undoState } from './state.svelte';
+import { createHistoryStack } from './undo-stack.svelte';
+import { createTransaction } from './transaction';
+import { undoable } from './state.svelte';
 
 describe('transactionCtrl', () => {
   test('should return current draft', () => {
-    const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1.push);
-    const store1 = undoState<Record<string, unknown>>('foo1', {});
+    const historyStack = createHistoryStack('created');
+    const transaction = createTransaction(historyStack.push);
+    const hState1 = undoable('foo1', { a: 0 });
 
-    let draft1 = transactionCtrl1.draft(store1);
-    draft1['a'] = 1;
-
-    draft1 = transactionCtrl1.draft(store1);
-    expect(draft1['a']).toBe(1);
+    transaction.draft(hState1).a = 1;
+    expect(transaction.draft(hState1).a).toBe(1);
   });
 
   test('should commit store value', () => {
-    const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1.push);
-    const store1 = undoState<Record<string, unknown>>('foo1', {});
+    const historyStack = createHistoryStack('created');
+    const transaction = createTransaction(historyStack.push);
+    const hState1 = undoable('foo1', { a: 0 });
 
-    const draft1 = transactionCtrl1.draft(store1);
-    draft1['a'] = 1;
-    expect(store1.value).toEqual({});
+    transaction.draft(hState1).a = 1;
+    expect(hState1.value).toEqual({ a: 0 });
 
-    transactionCtrl1.commit('commit');
-    expect(store1.value).toEqual({ a: 1 });
-    expect(undoStack1.canUndo).toBe(true);
+    transaction.commit('commit');
+    expect(hState1.value).toEqual({ a: 1 });
+    expect(historyStack.canUndo).toBe(true);
   });
 
   test('should commit multiple store values', () => {
-    const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1.push);
-    const store1 = undoState<Record<string, unknown>>('foo1', {});
-    const store2 = undoState<string[]>('foo2', []);
+    const historyStack = createHistoryStack('created');
+    const transaction = createTransaction(historyStack.push);
+    const hState1 = undoable('foo1', { a: 0 });
+    const hState2 = undoable<string[]>('foo2', []);
 
-    const draft1 = transactionCtrl1.draft(store1);
-    draft1['a'] = 1;
-    expect(store1.value).toEqual({});
+    transaction.draft(hState1).a = 1;
+    expect(hState1.value).toEqual({ a: 0 });
 
-    const draft2 = transactionCtrl1.draft(store2);
-    draft2.push('x');
-    expect(store2.value).toEqual([]);
+    transaction.draft(hState2).push('x');
+    expect(hState2.value).toEqual([]);
 
-    transactionCtrl1.commit('commit');
-    expect(store1.value).toEqual({ a: 1 });
-    expect(store2.value).toEqual(['x']);
-    expect(undoStack1.canUndo).toBe(true);
+    transaction.commit('commit');
+    expect(hState1.value).toEqual({ a: 1 });
+    expect(hState2.value).toEqual(['x']);
+    expect(historyStack.canUndo).toBe(true);
   });
 
   test('should rollback store values', () => {
-    const undoStack1 = undoStack('created');
-    const transactionCtrl1 = transactionCtrl(undoStack1.push);
-    const store1 = undoState<Record<string, unknown>>('foo1', {});
-    const store2 = undoState<string[]>('foo2', []);
+    const historyStack = createHistoryStack('created');
+    const transaction = createTransaction(historyStack.push);
+    const hState1 = undoable('foo1', { a: 0 });
+    const hState2 = undoable<string[]>('foo2', []);
 
-    const draft1 = transactionCtrl1.draft(store1);
-    draft1['a'] = 1;
+    transaction.draft(hState1).a = 1;
+    transaction.draft(hState2).push('x');
 
-    const draft2 = transactionCtrl1.draft(store2);
-    draft2.push('x');
+    transaction.rollback();
+    expect(hState1.value).toEqual({ a: 0 });
+    expect(hState2.value).toEqual([]);
+    expect(historyStack.canUndo).toBe(false);
 
-    transactionCtrl1.rollback();
-    expect(store1.value).toEqual({});
-    expect(store2.value).toEqual([]);
-    expect(undoStack1.canUndo).toBe(false);
-
-    transactionCtrl1.commit('commit');
-    expect(store1.value).toEqual({});
-    expect(store2.value).toEqual([]);
-    expect(undoStack1.canUndo).toBe(false);
+    transaction.commit('commit');
+    expect(hState1.value).toEqual({ a: 0 });
+    expect(hState2.value).toEqual([]);
+    expect(historyStack.canUndo).toBe(false);
   });
 });
