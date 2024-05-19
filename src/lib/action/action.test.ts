@@ -1,6 +1,6 @@
-import { undoable } from '../state.svelte';
-import type { ReadableHistoryAction } from './action';
-import { createSetAction } from './action-set';
+import { undoable } from '../state.svelte.js';
+import type { ReadableHistoryAction } from './action.js';
+import { createSetAction } from './action-set.js';
 
 describe('HistoryAction properties', () => {
   test('should should be readonly', () => {

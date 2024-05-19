@@ -1,0 +1,13 @@
+export { createHistoryStack } from './undo-stack.svelte.js';
+export { createTransaction } from './transaction.js';
+export { createErasedAction } from './action/action-erased.js';
+export { createInitAction } from './action/action-init.js';
+export { createGroupAction } from './action/action-group.js';
+export { createSetAction } from './action/action-set.js';
+export { createMutateAction } from './action/action-mutate.js';
+export { undoable } from './state.svelte.js';
+export type { Immutable, Objectish } from 'immer';
+export type { HistoryStack } from './undo-stack.svelte.js';
+export type { Transaction } from './transaction.js';
+export type { HistorySnapshot } from './snapshot.js';
+export type { Undoable } from './state.svelte.js';

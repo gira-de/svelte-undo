@@ -1,4 +1,4 @@
-import { createInitAction } from './action-init';
+import { createInitAction } from './action-init.js';
 
 describe('InitAction', () => {
   test('should initialize action correctly', () => {

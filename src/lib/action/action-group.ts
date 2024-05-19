@@ -1,4 +1,4 @@
-import type { HistoryAction } from './action';
+import type { HistoryAction } from './action.js';
 
 export function createGroupAction<TMsg>(msg: TMsg): HistoryAction<TMsg> & {
   push(action: HistoryAction<undefined>): void;

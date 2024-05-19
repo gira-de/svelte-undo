@@ -1,15 +1,15 @@
-import type { HistoryAction } from './action/action';
+import type { HistoryAction } from './action/action.js';
 import type { Objectish } from 'immer';
-import type { Undoable } from './state.svelte';
-import { createSetAction } from './action/action-set';
+import type { Undoable } from './state.svelte.js';
+import { createSetAction } from './action/action-set.js';
 import {
   type MutateActionPatch,
   createMutateAction,
-} from './action/action-mutate';
-import { createGroupAction } from './action/action-group';
-import { createInitAction } from './action/action-init';
-import { createErasedAction } from './action/action-erased';
-import { isBarrierAction } from './action/action-barrier';
+} from './action/action-mutate.js';
+import { createGroupAction } from './action/action-group.js';
+import { createInitAction } from './action/action-init.js';
+import { createErasedAction } from './action/action-erased.js';
+import { isBarrierAction } from './action/action-barrier.js';
 
 export type HistorySnapshot<TMsg> = {
   actions: SnapshotAction<TMsg>[];

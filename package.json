@@ -5,28 +5,24 @@
   "license": "MIT",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.test.*"
   ],
-  "main": "./dist/svelte-undo.umd.js",
-  "module": "./dist/svelte-undo.es.js",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/svelte-undo.es.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/svelte-undo.umd.js"
-      }
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js"
     }
   },
-  "types": "./dist/types/index.d.ts",
+  "svelte": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite dev",
+    "build": "vite build && pnpm package",
     "preview": "vite preview",
-    "check": "tsc",
+    "package": "svelte-kit sync && svelte-package && publint",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage",
@@ -38,8 +34,11 @@
     "precommit": "pnpm check && pnpm coverage && pnpm format && pnpm lint && pnpm build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.1",
-    "@sveltejs/vite-plugin-svelte": "4.0.0-next.1",
+    "@changesets/cli": "^2.27.2",
+    "@sveltejs/adapter-auto": "^3.2.0",
+    "@sveltejs/kit": "^2.5.9",
+    "@sveltejs/package": "^2.3.1",
+    "@sveltejs/vite-plugin-svelte": "^3.1.0",
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@typescript-eslint/parser": "^7.9.0",
@@ -47,20 +46,22 @@
     "@vitest/ui": "^1.6.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
+    "prettier-plugin-svelte": "^3.2.3",
+    "publint": "^0.2.8",
     "svelte": "5.0.0-next.135",
+    "svelte-check": "^3.7.1",
     "tslib": "^2.6.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
-    "vite-plugin-dts": "^3.9.1",
     "vitest": "^1.6.0"
   },
-  "homepage": "https://github.com/gira-de/svelte-undo#readme",
   "dependencies": {
     "immer": "^10.1.1"
   },
   "peerDependencies": {
-    "svelte": "^5.0.0"
+    "svelte": "^5.0.0-next.1"
   },
+  "homepage": "https://github.com/gira-de/svelte-undo#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gira-de/svelte-undo.git"

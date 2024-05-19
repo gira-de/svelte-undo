@@ -1,9 +1,9 @@
 import { createDraft, finishDraft } from 'immer';
 import type { Patch, Objectish } from 'immer';
-import type { Undoable } from './state.svelte';
-import { createMutateAction } from './action/action-mutate';
-import { createGroupAction } from './action/action-group';
-import type { HistoryAction } from './action/action';
+import type { Undoable } from './state.svelte.js';
+import { createMutateAction } from './action/action-mutate.js';
+import { createGroupAction } from './action/action-group.js';
+import type { HistoryAction } from './action/action.js';
 
 export interface Transaction<TMsg> {
   /**

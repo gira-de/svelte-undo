@@ -1,7 +1,7 @@
-import { undoable } from '../state.svelte';
-import { createHistoryStack } from '../undo-stack.svelte';
-import { createGroupAction } from './action-group';
-import { createSetAction } from './action-set';
+import { undoable } from '../state.svelte.js';
+import { createHistoryStack } from '../undo-stack.svelte.js';
+import { createGroupAction } from './action-group.js';
+import { createSetAction } from './action-set.js';
 
 describe('MutateAction', () => {
   test('should apply and revert values', () => {

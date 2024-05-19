@@ -1,5 +1,5 @@
-import { undoable } from '../state.svelte';
-import { createMutateAction, type MutateActionPatch } from './action-mutate';
+import { undoable } from '../state.svelte.js';
+import { createMutateAction, type MutateActionPatch } from './action-mutate.js';
 import { produce } from 'immer';
 
 describe('MutateAction', () => {

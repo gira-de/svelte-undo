@@ -1,12 +1,12 @@
-import type { ReadableHistoryAction, HistoryAction } from './action/action';
-import { isBarrierAction } from './action/action-barrier';
-import { createErasedAction } from './action/action-erased';
-import { createInitAction } from './action/action-init';
+import type { ReadableHistoryAction, HistoryAction } from './action/action.js';
+import { isBarrierAction } from './action/action-barrier.js';
+import { createErasedAction } from './action/action-erased.js';
+import { createInitAction } from './action/action-init.js';
 import {
   loadSnapshotActions,
   createSnapshotActions,
   type HistorySnapshot,
-} from './snapshot';
+} from './snapshot.js';
 
 type HistoryData<TMsg> = {
   actions: HistoryAction<TMsg>[];

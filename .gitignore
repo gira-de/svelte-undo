@@ -1,5 +1,6 @@
 /node_modules/
 /dist/
 /coverage/
+/.svelte-kit
 yarn.lock
 package-lock.json

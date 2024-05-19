@@ -1,5 +1,5 @@
-import type { HistoryAction } from './action';
-import { createBarrierAction } from './action-barrier';
+import type { HistoryAction } from './action.js';
+import { createBarrierAction } from './action-barrier.js';
 
 export function createInitAction<TMsg>(msg: TMsg): HistoryAction<TMsg> {
   return createBarrierAction({

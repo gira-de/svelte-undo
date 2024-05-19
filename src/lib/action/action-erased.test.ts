@@ -1,4 +1,4 @@
-import { createErasedAction } from './action-erased';
+import { createErasedAction } from './action-erased.js';
 
 describe('ErasedAction', () => {
   test('should initialize action correctly', () => {

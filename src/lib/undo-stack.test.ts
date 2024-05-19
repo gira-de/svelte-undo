@@ -1,9 +1,9 @@
-import { undoable } from './state.svelte';
-import { createSetAction } from './action/action-set';
-import { createErasedAction } from './action/action-erased';
-import { createInitAction } from './action/action-init';
-import { createHistoryStack } from './undo-stack.svelte';
-import type { HistorySnapshot } from './snapshot';
+import { undoable } from './state.svelte.js';
+import { createSetAction } from './action/action-set.js';
+import { createErasedAction } from './action/action-erased.js';
+import { createInitAction } from './action/action-init.js';
+import { createHistoryStack } from './undo-stack.svelte.js';
+import type { HistorySnapshot } from './snapshot.js';
 
 describe('historyStack', () => {
   test('props should be readonly', () => {
