@@ -1,7 +1,7 @@
-import type { HistoryAction } from './action.js';
+import type { HistoryAction } from './types.js';
 import { enablePatches, enableMapSet, applyPatches } from 'immer';
 import type { Patch, Objectish } from 'immer';
-import type { Undoable } from '../state.svelte.js';
+import type { Undoable } from '../undoable.svelte.js';
 
 enablePatches();
 enableMapSet();

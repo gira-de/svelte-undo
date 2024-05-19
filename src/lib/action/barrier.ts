@@ -1,4 +1,4 @@
-import type { HistoryAction } from './action.js';
+import type { HistoryAction } from './types.js';
 
 const BarrierPatch = Object.freeze({});
 

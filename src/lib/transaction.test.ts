@@ -1,6 +1,6 @@
-import { createHistoryStack } from './undo-stack.svelte.js';
+import { createHistoryStack } from './stack.svelte.js';
 import { createTransaction } from './transaction.js';
-import { undoable } from './state.svelte.js';
+import { undoable } from './undoable.svelte.js';
 
 describe('transactionCtrl', () => {
   test('should return current draft', () => {

@@ -1,7 +1,7 @@
-import type { ReadableHistoryAction, HistoryAction } from './action/action.js';
-import { isBarrierAction } from './action/action-barrier.js';
-import { createErasedAction } from './action/action-erased.js';
-import { createInitAction } from './action/action-init.js';
+import type { ReadableHistoryAction, HistoryAction } from './action/types.js';
+import { isBarrierAction } from './action/barrier.js';
+import { createErasedAction } from './action/erased.js';
+import { createInitAction } from './action/init.js';
 import {
   loadSnapshotActions,
   createSnapshotActions,

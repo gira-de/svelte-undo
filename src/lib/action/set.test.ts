@@ -1,5 +1,5 @@
-import { undoable } from '../state.svelte.js';
-import { createSetAction } from './action-set.js';
+import { undoable } from '../undoable.svelte.js';
+import { createSetAction } from './set.js';
 
 describe('SetAction', () => {
   test('should apply and revert values', () => {

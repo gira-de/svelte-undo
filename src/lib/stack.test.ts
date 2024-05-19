@@ -1,8 +1,8 @@
-import { undoable } from './state.svelte.js';
-import { createSetAction } from './action/action-set.js';
-import { createErasedAction } from './action/action-erased.js';
-import { createInitAction } from './action/action-init.js';
-import { createHistoryStack } from './undo-stack.svelte.js';
+import { undoable } from './undoable.svelte.js';
+import { createSetAction } from './action/set.js';
+import { createErasedAction } from './action/erased.js';
+import { createInitAction } from './action/init.js';
+import { createHistoryStack } from './stack.svelte.js';
 import type { HistorySnapshot } from './snapshot.js';
 
 describe('historyStack', () => {

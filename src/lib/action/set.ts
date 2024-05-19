@@ -1,5 +1,5 @@
-import type { Undoable } from '../state.svelte.js';
-import type { HistoryAction } from './action.js';
+import type { Undoable } from '../undoable.svelte.js';
+import type { HistoryAction } from './types.js';
 
 export function createSetAction<TValue, TMsg>(
   undoable: Undoable<TValue>,

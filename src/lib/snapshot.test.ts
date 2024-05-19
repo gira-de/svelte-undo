@@ -1,14 +1,11 @@
-import { isBarrierAction } from './action/action-barrier.js';
-import { createErasedAction } from './action/action-erased.js';
-import { createGroupAction } from './action/action-group.js';
-import { createInitAction } from './action/action-init.js';
-import {
-  type MutateActionPatch,
-  createMutateAction,
-} from './action/action-mutate.js';
-import { createSetAction } from './action/action-set.js';
+import { isBarrierAction } from './action/barrier.js';
+import { createErasedAction } from './action/erased.js';
+import { createGroupAction } from './action/group.js';
+import { createInitAction } from './action/init.js';
+import { type MutateActionPatch, createMutateAction } from './action/mutate.js';
+import { createSetAction } from './action/set.js';
 import { loadSnapshotActions, createSnapshotActions } from './snapshot.js';
-import { undoable } from './state.svelte.js';
+import { undoable } from './undoable.svelte.js';
 
 describe('loadSnapshotActions', () => {
   test('should load init-action', () => {
