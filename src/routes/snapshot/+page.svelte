@@ -12,7 +12,7 @@
     historySnapshot: HistorySnapshot<string>;
   };
 
-  const user = undoable('user', { firstname: 'Foo', lastname: 'Bar' });
+  const user = undoable('user', { firstname: '', lastname: '' });
   const history = createHistoryStack('init');
 
   // create transaction

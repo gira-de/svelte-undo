@@ -100,7 +100,7 @@ describe('undo', () => {
     historyStack.push(action);
 
     historyStack.undo();
-    expect(historyStack.selectedAction).toBe(action);
+    expect(historyStack.selectedAction).toEqual(action);
   });
 });
 
@@ -229,7 +229,7 @@ describe('goto', () => {
 
     historyStack.goto(action.seqNbr);
 
-    expect(historyStack.selectedAction).toBe(action);
+    expect(historyStack.selectedAction).toEqual(action);
   });
 
   test('should do nothing if the target undo action crosses a barrier', () => {
@@ -245,7 +245,7 @@ describe('goto', () => {
 
     historyStack.goto(historyStack.actions[0].seqNbr);
 
-    expect(historyStack.selectedAction).toBe(setAction1);
+    expect(historyStack.selectedAction).toEqual(setAction1);
     expect(historyStack.canUndo).toBe(true);
   });
 

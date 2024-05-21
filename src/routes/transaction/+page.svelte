@@ -10,7 +10,7 @@
   const history = createHistoryStack('init');
   const transaction = createTransaction(history.push);
 
-  const user = undoable('user', { firstname: 'Foo', lastname: 'Bar' });
+  const user = undoable('user', { firstname: '', lastname: '' });
 
   const onSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
