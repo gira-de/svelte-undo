@@ -6,6 +6,7 @@ export { createGroupAction } from './action/group.js';
 export { createSetAction } from './action/set.js';
 export { createMutateAction } from './action/mutate.js';
 export { undoable } from './undoable.svelte.js';
+export { isBarrierAction } from './action/barrier.js';
 export type { Immutable, Objectish } from 'immer';
 export type { HistoryStack } from './stack.svelte.js';
 export type { Transaction } from './transaction.js';
