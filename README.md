@@ -34,75 +34,82 @@ yarn add -D @gira-de/svelte-undo
 ### Push actions to undo stack
 
 ```ts
-import { createHistoryStack, SetAction } from '@gira-de/svelte-undo';
+import {
+  createHistoryStack,
+  createSetAction,
+  undoable,
+} from '@gira-de/svelte-undo';
 
 // create undo stack
-const myHistoryStack = createHistoryStack('first stack message');
-const msgStore = writable('old value');
+const history = createHistoryStack('first stack message');
+const value = undoable('unique-id', 'old value');
 
-// create a new action to update the store value
-const action = new SetAction(msgStore, 'new value', 'set new value');
+// create a new action
+const action = createSetAction(value, 'new value', 'set new value');
 
-// apply the action
+// applying the action will update the value
 action.apply();
-console.log($msgStore); // 'new value'
+console.log(value); // 'new value'
 
 // push action onto the undo stack
-myHistoryStack.push(action);
+history.push(action);
 
 // call undo() to revert the changes
-myHistoryStack.undo();
-console.log($msgStore); // 'old value'
+history.undo();
+console.log(value); // 'old value'
 ```
 
 ### Use transactions
 
-Creating actions and manually pushing them to the undo stack might create a lot of boilerplate code. The use of a Transaction simplifies this.
+Using actions directly is usually quite cumbersome and creates a lot of redundant code and opportunities for errors. Transactions simplify usage.
 
 ```ts
-import { createHistoryStack, transactionCtrl } from '@gira-de/svelte-undo';
+import {
+  createHistoryStack,
+  createTransaction,
+  undoable,
+} from '@gira-de/svelte-undo';
 
-// create a store as usual
-const personStore = writable({ name: 'John', age: '23' });
+// create a undoable value as usual
+const person = undoable('person', { name: 'John', age: 23 });
 
-// create undo stack and a transaction controller
-const myHistoryStack = createHistoryStack('created');
-const myTransaction = createTransaction(myHistoryStack.push);
+// create undo stack and a transaction
+const history = createHistoryStack('created');
+const transaction = createTransaction(history.push);
 
-// apply model changes on the draft state
-let personDraft = myTransaction.draft(personStore);
-personDraft['age'] = 24;
+// changes to the model are appliedj to a draft state
+const draftPerson = transaction.draft(person);
+draftPerson['age'] = 24;
 
-// apply all changes made to the drafts
-myTransaction.commit('happy birthday');
-console.log($personStore); // { name: 'John', age: '24' }
+// apply all changes made to the draft states
+transaction.commit('happy birthday');
+console.log(person); // { name: 'John', age: 24 }
 
 // call undo() to revert the changes
-myHistoryStack.undo();
-console.log($personStore); // { name: 'John', age: '23' }
+history.undo();
+console.log(person); // { name: 'John', age: 23 }
 ```
 
-Limitations: The transaction controller can only be used with Svelte stores that hold an Object-like value (object, array, map, set).
+Limitations: The transaction controller can only be used with Object-like value (object, array, map, set).
 
 ### Save from & load to undo stack
 
 ```ts
-import { createHistoryStack, transactionCtrl } from '@gira-de/svelte-undo';
+import {
+  createHistoryStack,
+  createTransaction,
+  undoable,
+} from '@gira-de/svelte-undo';
 
 // push an undo step to the undo stack
-const myHistoryStack = createHistoryStack('created');
-const myTransaction = createTransaction(myHistoryStack.push);
-const personStore = writable({ name: 'John', age: '23' });
-myTransaction.draft(personStore)['age'] = 24;
-myTransaction.commit('happy birthday');
-
-// provide a store id for each store used in the undo stack
-const stores = {
-  person: personStore,
-};
+const history = createHistoryStack('created');
+const transaction = createTransaction(history.push);
+const person = undoable('personId', { name: 'John', age: 23 });
+transaction.draft(person)['age'] = 24;
+transaction.commit('happy birthday');
 
 // create a snapshot
-const historySnapshot = myHistoryStack.createSnapshot(stores);
+const historySnapshot = history.createSnapshot();
 
 // snapshot can easily be stringified to json
 const json = JSON.stringify(historySnapshot);
@@ -112,95 +119,95 @@ console.log(json);
 //    index: 1,
 //    actions: [
 //      { type: 'init', msg: 'created' },
-//      { type: 'mutate', msg: 'happy birthday', storeId: 'person', data: ... }
+//      { type: 'mutate', msg: 'happy birthday', storeId: 'personId', data: ... }
 //    ]
 // }
 
 // later: load the undo stack snapshot
-myHistoryStack.loadSnapshot(JSON.parse(json), stores);
+history.loadSnapshot(JSON.parse(json), {
+  personId: person,
+});
 ```
 
 ## Documentation
 
-### historyStack
+### HistoryStack
 
-The _historyStack_ is basically a Svelte store with various properties and functions. It always contains at least one undo step (action).
+The _HistoryStack_ contains the undo actions, undo/redo functionality and various states.
+The actions stack can never be empty.
 
 #### Instantiation examples:
 
-`const myHistoryStack = createHistoryStack('first undo stack message');`
+`const historyStack = createHistoryStack('project created');`
 
-`const myHistoryStack = createHistoryStack({ user: 'xyz', msg: 'project created' });`
+`const historyStack = createHistoryStack({ timestamp: 12345678, msg: 'project created' });`
 
 #### Properties
 
-- $myHistoryStack.**actions**
-  - a list of all actions that are currently on the undo stack
-- $myHistoryStack.**selectedAction**
+- historyStack.**actions**
+  - the list of all actions that are currently on the undo stack
+- historyStack.**selectedAction**
   - the current active step whose changes are applied to the model
-- $myHistoryStack.**canUndo**
-  - _true_ if the _selectedAction_ is not the first action on the undo stack
+- historyStack.**canUndo**
+  - _true_ if the _selectedAction_ is not the first action on the stack and the action is not a barrier
   - _false_ otherwise
-- $myHistoryStack.**canRedo**
-  - _true_ if the _selectedAction_ is not the last action on the undo stack
+- historyStack.**canRedo**
+  - _true_ if the _selectedAction_ is not the last action on the stack and the next action is not a barrier
   - _false_ otherwise
-- $myHistoryStack.**index**
+- historyStack.**index**
   - the index of the current _selectedAction_
-  - e.g. is _0_ if _canUndo_ is false
 
 #### Functions
 
-- myHistoryStack.**push(action)**
+- historyStack.**push(action)**
   - pushes a new action onto the undo stack and selects the action
   - does not apply the action state, this has to be done manually
   - it's recommended to use the transaction controller instead of pushing actions manually
-- myHistoryStack.**undo()**
+- historyStack.**undo()**
   - reverts the state of the selected action and selects the previous action
-  - does nothing if there's no previous action on the undo stack
-- myHistoryStack.**redo()**
+  - does nothing if there's no previous action on the undo stack or the selected action is a barrier
+- historyStack.**redo()**
   - selects the next action and applies its state
-  - does nothing if there's no next action on the undo stack
-- myHistoryStack.**goto(seqNbr)**
+  - does nothing if there's no next action on the undo stack or the next action is a barrier
+- historyStack.**goto(seqNbr)**
   - selects the action for the specified sequence number (_action.seqNbr_) and applies/reverts all actions between
   - has basically the same effect as calling undo/redo in a loop
-- myHistoryStack.**clear()**
+- historyStack.**clear()**
   - removes all actions from the undo stack and creates a new init action
   - has the same effect as if a new undo stack has been created
-- myHistoryStack.**clearRedo()**
+- historyStack.**clearRedo()**
   - Removes all redoable actions from the stack
-  - This is the same as would happen if a new action is pushed while not being at the latest state,
-    just without pushing the action
-- myHistoryStack.**clearUndo()**
+  - This is the same as would happen if a new action is pushed while not being at the latest state, just without pushing the action
+- historyStack.**clearUndo()**
   - Deletes all previous undo actions
   - If the current position is the top of the stack, this effectively deletes the whole undo stack
-  - If not at the top of the stack, undo actions are still available and undo is possible
-- myHistoryStack.**createSnapshot(stores)**
+- historyStack.**createSnapshot()**
   - creates and returns a snapshot of the undo stack
-  - the snapshot can be easily serialized since it does not contain any store references etc.
-- myHistoryStack.**loadSnapshot(historySnapshot, stores)**
+  - the snapshot can be easily serialized since it does not contain any references to the undoable states etc.
+- historyStack.**loadSnapshot(historySnapshot, stores)**
   - clears the undo stack and then loads the specified snapshot
-- myHistoryStack.**erase(seqNbr?)**
+- historyStack.**erase(seqNbr?)**
   - removes undo/redo capability from actions to reduce the size of the undo stack
-  - all actions starting from the specified sequence number are erased
-  - starts erasing from the top of the stack if seqNbr is undefined
+  - starting from the specified sequence number the action itself and all previous actions are erased
+  - if seqNbr is undefined starts all actions are erased
   - erased actions are still included on the undo stack in form of log entries
   - this function is currently experimental and might not always yield the expected state
 
-### transactionCtrl
+### Transaction
 
-#### Instantiation
+#### Instantiation example
 
-`const myTransaction = createTransaction(myHistoryStack.push);`
+`const transaction = createTransaction(history.push);`
 
 #### Functions
 
-- myTransaction.**draft(store)**
-  - returns a new draft object for the specified store
-  - all changes to the draft object must be followed by a commit, otherwise they will not visible in the store
-- myTransaction.**commit(msg)**
-  - applies all draft changes to the corresponding stores
+- transaction.**draft(undoable)**
+  - returns a new draft object for the specified undoable state
+  - changes on the draft object are not applied to the original state until commit is called.
+- transaction.**commit(msg)**
+  - applies all draft changes to the undoable state
   - calling _commit_ without having any draft changes has no effect
-- myTransaction.**rollback()**
+- transaction.**rollback()**
   - discards all draft changes since the last commit
   - calling _commit_ after a _rollback_ has no effect
 
