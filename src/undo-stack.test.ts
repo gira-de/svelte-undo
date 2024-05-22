@@ -417,6 +417,7 @@ describe('erase', () => {
     expect(get(undoStack1).actions[0].seqNbr).toBe(0);
     expect(get(undoStack1).actions[1].seqNbr).toBe(1);
     expect(get(undoStack1).actions[2].seqNbr).toBe(2);
+    expect(get(undoStack1).selectedAction).toBe(get(undoStack1).actions[2]);
   });
 
   test('should erase starting from the specified action', () => {
