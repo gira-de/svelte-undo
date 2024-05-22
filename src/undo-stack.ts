@@ -291,8 +291,10 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
         undoStack.actions[i] = erasedAction;
       }
 
-      undoStack.canUndo = undoStack.index > startIndex;
       undoStack.selectedAction = undoStack.actions[undoStack.index];
+      undoStack.canUndo =
+        undoStack.index > 0 &&
+        !(undoStack.selectedAction instanceof BarrierAction);
       return undoStack;
     });
   }

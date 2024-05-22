@@ -475,6 +475,33 @@ describe('erase', () => {
     expect(get(undoStack1).actions[3].seqNbr).toBe(3);
   });
 
+  test('should update canUndo state correctly', () => {
+    const undoStack1 = undoStack('created');
+
+    const foo = writable(0);
+
+    const action1 = new SetAction(foo, 1, 'set value 1');
+    action1.apply();
+    undoStack1.push(action1);
+
+    const action2 = new SetAction(foo, 1, 'set value 2');
+    action2.apply();
+    undoStack1.push(action2);
+
+    const action3 = new SetAction(foo, 1, 'set value 3');
+    action2.apply();
+    undoStack1.push(action3);
+
+    expect(get(undoStack1).canUndo).toBe(true);
+
+    undoStack1.erase();
+    expect(get(undoStack1).canUndo).toBe(false);
+
+    // erase a state that has already been erased
+    undoStack1.erase(action2.seqNbr);
+    expect(get(undoStack1).canUndo).toBe(false);
+  });
+
   test('should do nothing if some erased actions are unapplied', () => {
     const undoStack1 = undoStack('created');
 
