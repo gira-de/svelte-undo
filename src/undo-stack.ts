@@ -292,6 +292,7 @@ export function undoStack<TMsg>(initActionMsg: TMsg): UndoStack<TMsg> {
       }
 
       undoStack.canUndo = undoStack.index > startIndex;
+      undoStack.selectedAction = undoStack.actions[undoStack.index];
       return undoStack;
     });
   }
