@@ -73,20 +73,6 @@ section h1 {
   margin: 0;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-li {
-  padding: 0.25rem 0.5rem;
-}
-
-li.selected {
-  background-color: var(--bg-base-200);
-}
-
 label {
   display: flex;
   flex-direction: column;
@@ -95,4 +81,33 @@ label {
 
 form {
   display: contents;
+}
+
+table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: none;
+  border: 1px solid var(--bg-base-300);
+
+  th {
+    font: inherit;
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem;
+  }
+
+  tr.selected {
+    background-color: var(--bg-base-200);
+    border: 1px solid var(--bg-base-300);
+  }
+
+  th:last-child:not(:first-child),
+  td:last-child:not(:first-child) {
+    text-align: right;
+  }
 }

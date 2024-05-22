@@ -45,11 +45,13 @@
     <button disabled={!history.canUndo} onclick={history.undo}>Undo</button>
     <button disabled={!history.canRedo} onclick={history.redo}>Redo</button>
   </div>
-  <ul>
-    {#each history.actions as action}
-      <li class:selected={action === history.selectedAction}>
-        {action.msg}
-      </li>
-    {/each}
-  </ul>
+  <table>
+    <tbody>
+      {#each history.actions as action}
+        <tr class:selected={action === history.selectedAction}>
+          <td>{action.msg}</td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
 </section>

@@ -476,7 +476,7 @@ describe('erase', () => {
 });
 
 describe('clear', () => {
-  test('should all actions from stack and create a new init action', () => {
+  test('should remove all actions from stack and create a new init action', () => {
     const historyStack = createHistoryStack('created');
 
     const action = createSetAction(undoable('foo', 0), 1, 'set value 1');

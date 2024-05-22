@@ -60,15 +60,14 @@ test('should update undo stack', async () => {
 
   const valueInput = screen.getByLabelText('Value');
   const applyButton = screen.getByRole('button', { name: 'Apply' });
-  const undoList = screen.getByRole('list');
 
   // change input and check stack entries
   await user.type(valueInput, 'Foo');
   await user.click(applyButton);
-  expect(undoList.children).toHaveLength(2);
+  expect(screen.getAllByRole('row')).toHaveLength(2);
 
   // change input and check stack entries
   await user.type(valueInput, 'Bar');
   await user.click(applyButton);
-  expect(undoList.children).toHaveLength(3);
+  expect(screen.getAllByRole('row')).toHaveLength(3);
 });

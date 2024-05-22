@@ -80,18 +80,17 @@ test('should not create undo step if value is unchanged', async () => {
 
   const firstnameInput = screen.getByLabelText('Firstname');
   const applyButton = screen.getByRole('button', { name: 'Apply' });
-  const undoList = screen.getByRole('list');
 
   // click apply
   await user.click(applyButton);
-  expect(undoList.children).toHaveLength(1);
+  expect(screen.getAllByRole('row')).toHaveLength(1);
 
   // change input and click apply
   await user.type(firstnameInput, 'Foo');
   await user.click(applyButton);
-  expect(undoList.children).toHaveLength(2);
+  expect(screen.getAllByRole('row')).toHaveLength(2);
 
   // click apply
   await user.click(applyButton);
-  expect(undoList.children).toHaveLength(2);
+  expect(screen.getAllByRole('row')).toHaveLength(2);
 });

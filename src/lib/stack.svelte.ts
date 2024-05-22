@@ -7,6 +7,7 @@ import {
   createSnapshotActions,
   type HistorySnapshot,
 } from './snapshot.js';
+import type { Undoable } from './undoable.svelte.js';
 
 type HistoryData<TMsg> = {
   actions: HistoryAction<TMsg>[];
@@ -16,51 +17,7 @@ type HistoryData<TMsg> = {
   index: number;
 };
 
-type ReadableHistoryData<TMsg> = {
-  /**
-   * list of all actions that are currently on the undo stack
-   */
-  readonly actions: ReadonlyArray<ReadableHistoryAction<TMsg>>;
-
-  /**
-   * the active undo step those state has been applied
-   */
-  readonly selectedAction: ReadableHistoryAction<TMsg>;
-
-  /**
-   * true if the selected action is not on the top of the stack.
-   * Is false after pushing an action to the stack.
-   */
-  readonly canRedo: boolean;
-
-  /**
-   * true if the selected action is not the first action on the stack.
-   * Is false after the stack has been created.
-   */
-  readonly canUndo: boolean;
-
-  /**
-   * index is the selected action. Any value between 0 and actions.length - 1
-   */
-  readonly index: number;
-};
-
-function createHistoryData<TMsg>(
-  seqNbr: number,
-  initActionMsg: TMsg,
-): HistoryData<TMsg> {
-  const selectedAction = createInitAction(initActionMsg);
-  selectedAction.seqNbr = seqNbr;
-  return {
-    actions: [selectedAction],
-    selectedAction,
-    canRedo: false,
-    canUndo: false,
-    index: 0,
-  };
-}
-
-export interface HistoryStack<TMsg> extends ReadableHistoryData<TMsg> {
+export interface HistoryStack<TMsg> {
   /**
    * Reverts the selected action and selects the previous action.
    * Does nothing if there is no previous action.
@@ -74,11 +31,18 @@ export interface HistoryStack<TMsg> extends ReadableHistoryData<TMsg> {
   redo: () => void;
 
   /**
+   * Checks if an action state can be applied
+   * @param seqNbr the sequence number of the action
+   * @returns true if action with seqNbr can be applied, else false
+   */
+  canGoto: (seqNbr: number) => boolean;
+
+  /**
    * Applies or reverts all actions until the action with the specified
    * seqNbr is reached. Then the specified action is selected.
    * Does nothing if no action with the specified seqNbr exists.
    * @param seqNbr is the sequence number of the action those state should be
-   * loaded.
+   * applied.
    */
   goto: (seqNbr: number) => void;
 
@@ -121,7 +85,6 @@ export interface HistoryStack<TMsg> extends ReadableHistoryData<TMsg> {
 
   /**
    * Creates a snapshot of the current undo stack that can easily be serialized.
-   * @param stores object that contains unique string keys for each store that is references by the undo stack
    * @returns snapshot object of the undo stack
    */
   createSnapshot: () => HistorySnapshot<TMsg>;
@@ -129,13 +92,55 @@ export interface HistoryStack<TMsg> extends ReadableHistoryData<TMsg> {
   /**
    * Loads the snapshot that has previously been created with createSnapshot().
    * @param historySnapshot
-   * @param stores
+   * @param undoables map of undoables thoses values should be updated by the undo actions
    * @returns
    */
   loadSnapshot: (
     historySnapshot: HistorySnapshot<TMsg>,
-    stores: Record<string, unknown>,
+    undoables: Record<string, Undoable<unknown>>,
   ) => void;
+
+  /**
+   * list of all actions that are currently on the undo stack
+   */
+  readonly actions: ReadonlyArray<ReadableHistoryAction<TMsg>>;
+
+  /**
+   * the active undo step those state has been applied
+   */
+  readonly selectedAction: ReadableHistoryAction<TMsg>;
+
+  /**
+   * true if the selected action is not on the top of the stack.
+   * Is false after pushing an action to the stack.
+   */
+  readonly canRedo: boolean;
+
+  /**
+   * true if the selected action is not the first action on the stack.
+   * Is false after the stack has been created.
+   */
+  readonly canUndo: boolean;
+
+  /**
+   * index is the selected action. Any value between 0 and actions.length - 1
+   */
+  readonly index: number;
+}
+
+function createHistoryData<TMsg>(
+  seqNbr: number,
+  initActionMsg: TMsg,
+): HistoryData<TMsg> {
+  const selectedAction = createInitAction(initActionMsg);
+  selectedAction.seqNbr = seqNbr;
+  return {
+    actions: [selectedAction],
+    selectedAction,
+    canRedo: false,
+    canUndo: false,
+    index: 0,
+  };
 }
 
 /**
@@ -195,28 +200,44 @@ export function createHistoryStack<TMsg>(
       !isBarrierAction(historyData.actions[historyData.index + 1]);
   }
 
-  function goto(seqNbr: number) {
+  function canGoto(seqNbr: number) {
     const targetIndex = historyData.actions.findIndex(
       (a) => a.seqNbr === seqNbr,
     );
+    return canGotoIndex(targetIndex);
+  }
+
+  function canGotoIndex(targetIndex: number) {
     if (targetIndex < 0) {
-      return;
+      return false;
     }
 
     if (targetIndex === historyData.index) {
-      return;
+      return false;
     }
 
     for (let i = historyData.index; targetIndex < i; i--) {
       if (isBarrierAction(historyData.actions[i])) {
-        return;
+        return false;
       }
     }
 
     for (let i = historyData.index + 1; targetIndex >= i; i++) {
       if (isBarrierAction(historyData.actions[i])) {
-        return;
+        return false;
       }
+    }
+
+    return true;
+  }
+
+  function goto(seqNbr: number) {
+    const targetIndex = historyData.actions.findIndex(
+      (a) => a.seqNbr === seqNbr,
+    );
+
+    if (!canGotoIndex(targetIndex)) {
+      return;
     }
 
     for (; targetIndex < historyData.index; historyData.index--) {
@@ -303,9 +324,9 @@ export function createHistoryStack<TMsg>(
 
   function loadSnapshot(
     historySnapshot: HistorySnapshot<TMsg>,
-    stores: Record<string, unknown>,
+    undoables: Record<string, Undoable<unknown>>,
   ) {
-    const actions = loadSnapshotActions(historySnapshot.actions, stores);
+    const actions = loadSnapshotActions(historySnapshot.actions, undoables);
     actions.forEach((a) => (a.seqNbr = nextSeqNbr()));
 
     historyData = {
@@ -321,6 +342,7 @@ export function createHistoryStack<TMsg>(
     push,
     undo,
     redo,
+    canGoto,
     goto,
     erase,
     clear,
