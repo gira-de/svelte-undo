@@ -1,5 +1,20 @@
 # @gira-de/svelte-undo
 
+## 1.3.0
+
+### Minor Changes
+
+- e283b62: add support for Svelte 5
+
+### Patch Changes
+
+- cb364a1: fix: incorrect canUndo state after erasing actions twice
+- a78cb63: Upgrade dev dependencies
+- 7365eda: Remove unused dev dependency prettier-plugin-svelte
+- ce0be15: Upgrade PNPM to version 9
+- 34b1eb5: fix: update selectedAction after actions erased
+- b8579a8: Upgrade GitHub actions to use Node.js 20
+
 ## 1.2.2
 
 ### Patch Changes
